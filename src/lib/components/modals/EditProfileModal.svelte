@@ -4,10 +4,10 @@
 
 	let { profileId, modalId, closeModal, openModal } = $props();
 
-	let title = '';
-	let summary = '';
-	let skills = '';
-	let cvFile: File | null = null;
+	let title = $state('');
+	let summary = $state('');
+	let skills = $state('');
+	let cvFile: File | null = $state(null);
 
 	$effect(() => {
 		if (profileId) {
@@ -38,9 +38,11 @@
 			cvFile
 		});
 
+		closeModal();
+
 		// Show success message or confirmation
 		openModal({
-			component: import('./SuccessModal.svelte'),
+			component: () => import('./SuccessModal.svelte'),
 			props: {
 				title: 'Profile Updated',
 				message: 'Your profile has been successfully updated!'
@@ -50,7 +52,7 @@
 	}
 </script>
 
-<div class="space-y-6">
+<div class="space-y-4">
 	<div class="flex items-center gap-3">
 		<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 			<User class="h-5 w-5 text-[#ff4d00]" />
@@ -85,8 +87,8 @@
 				name="summary"
 				id="summary"
 				bind:value={summary}
-				rows="4"
-				class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+				rows="3"
+				class="w-full resize-none rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
 				placeholder="Brief description of your experience..."
 			></textarea>
 		</div>
@@ -123,7 +125,7 @@
 		</div>
 	</div>
 
-	<div class="flex gap-3 pt-4">
+	<div class="flex gap-3 pt-2">
 		<Button name="update profile" icon={Save} onClick={handleUpdateProfile} />
 		<button
 			onclick={handleCancel}

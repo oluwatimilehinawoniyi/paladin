@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { modalStore, type ModalConfig } from '$lib/stores/modalStore';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import { twMerge } from 'tailwind-merge';
 
@@ -8,35 +8,34 @@
 
 	const { component: ComponentOrImport, props: componentProps = {}, options = {}, id } = modal;
 
-	// svelte-ignore non_reactive_update
 	let Component: any = $state(null);
+	let isLoading = $state(true);
 
-	// Handle dynamic imports
-	// if (typeof ComponentOrImport === 'function' && ComponentOrImport.toString().includes('import')) {
-	// 	// It's a dynamic import function
-	// 	(ComponentOrImport as () => Promise<{ default: any }>)().then((module: any) => {
-	// 		Component = module.default;
-	// 	});
-	// } else {
-	// 	// It's a static component
-	Component = ComponentOrImport;
+	// Simple dynamic import handling
 	$effect(() => {
-		if (ComponentOrImport) {
-			if (
-				typeof ComponentOrImport === 'function' &&
-				ComponentOrImport.constructor.name === 'AsyncFunction'
-			) {
-				(ComponentOrImport as () => Promise<{ default: any }>)().then((module: any) => {
+		async function loadComponent() {
+			console.log('Loading component:', modal.component, typeof modal.component);
+
+			if (typeof modal.component === 'function') {
+				// It's a dynamic import function
+				try {
+					console.log('Attempting dynamic import...');
+					const module = await modal.component();
+					console.log('Module loaded:', module);
 					Component = module.default || module;
-				});
-			} else if (ComponentOrImport && typeof (ComponentOrImport as any).then === 'function') {
-				(ComponentOrImport as unknown as Promise<any>).then((module: any) => {
-					Component = module.default || module;
-				});
+					console.log('Component set:', Component);
+				} catch (error) {
+					console.error('Failed to load modal component:', error);
+				}
 			} else {
-				Component = ComponentOrImport;
+				// It's a regular component
+				console.log('Setting regular component...');
+				Component = modal.component;
 			}
+			isLoading = false;
 		}
+
+		loadComponent();
 	});
 
 	const {
@@ -77,10 +76,10 @@
 
 	// Size classes
 	const sizeClasses = {
-		sm: 'max-w-md',
-		md: 'max-w-lg',
-		lg: 'max-w-2xl',
-		xl: 'max-w-4xl',
+		sm: 'max-w-sm',
+		md: 'max-w-md',
+		lg: 'max-w-lg',
+		xl: 'max-w-xl',
 		full: 'max-w-full mx-4'
 	};
 
@@ -120,13 +119,17 @@
 
 		<!-- Dynamic Component -->
 		<div class="p-6">
-			{#if Component}
+			{#if !isLoading && Component}
 				<Component
 					{...componentProps}
 					modalId={id}
 					closeModal={() => modalStore.close(id)}
 					openModal={modalStore.open}
 				/>
+			{:else if isLoading}
+				<div class="flex items-center justify-center py-8">
+					<div class="text-gray-500">Loading...</div>
+				</div>
 			{/if}
 		</div>
 	</div>

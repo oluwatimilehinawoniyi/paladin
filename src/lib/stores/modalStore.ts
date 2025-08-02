@@ -1,9 +1,10 @@
 import { writable } from 'svelte/store';
-import type { ComponentType } from 'svelte';
 
 export interface ModalConfig {
 	id: string;
-	component: ComponentType | (() => Promise<{ default: ComponentType }>);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	component: any;
+	// component: ComponentType | (() => Promise<{ default: ComponentType }>);
 	props?: Record<string, unknown>;
 	options?: {
 		closeOnEscape?: boolean;
