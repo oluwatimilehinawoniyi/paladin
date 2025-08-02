@@ -2,6 +2,8 @@
 	import { BarChart3, FileText, LogOut, Send, Settings, User } from '@lucide/svelte';
 	import SidebarMenuItem from '../ui/SidebarMenuItem.svelte';
 	import logo from '$lib/assets/logo.png';
+	import Button from '../ui/Button.svelte';
+	import { page } from '$app/stores';
 
 	const menuItems = [
 		{
@@ -46,7 +48,10 @@
 		<div class="flex flex-col gap-4">
 			{#each menuItems as item (item.id)}
 				{@const Icon = item.icon}
-				<SidebarMenuItem {Icon} title={item.title} link={item.id} />
+				{@const isActive =
+					$page.url.pathname === `/app/${item.id}` ||
+					($page.url.pathname === '/app' && item.id === '')}
+				<SidebarMenuItem {Icon} title={item.title} link={item.id} {isActive} />
 			{/each}
 		</div>
 	</div>
@@ -70,12 +75,7 @@
 			</div>
 		</div>
 
-		<button
-			class="text[#160200] flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-[#ff4d00] px-4 py-2 font-medium text-white capitalize"
-		>
-			<LogOut class="size-4" />
-			logout</button
-		>
+		<Button name="logout" classes="w-full" icon={LogOut} />
 	</div>
 </section>
 

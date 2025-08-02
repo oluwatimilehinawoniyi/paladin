@@ -2,9 +2,9 @@
 	import Sidebar from '$lib/components/layouts/Sidebar.svelte';
 </script>
 
-<main class="flex min-h-screen">
+<main class="flex h-full min-h-screen">
 	<Sidebar />
-	<section class="">
-		<slot />
-	</section>
+	<!-- <section class=""> -->
+	<slot />
+	<!-- </section> -->
 </main>
