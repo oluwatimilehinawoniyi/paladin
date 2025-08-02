@@ -2,19 +2,33 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { profilesData } from '$lib/data/profiles';
+	import { modalStore } from '$lib/stores/modalStore';
 	import { Calendar, Download, Plus, Save, SquarePen, Trash2, UserRoundPlus } from '@lucide/svelte';
 
-	let profiles = profilesData
+	let profiles = profilesData;
 
 	function handleEdit(id: number) {
 		console.log('Edit profile:', id);
-		// Add your edit logic here
+		modalStore.open({
+			component: () => import('$lib/components/modals/EditProfileModal.svelte') as any,
+			props: { profileId: id },
+			options: { size: 'lg' }
+		});
 	}
 
 	function handleDelete(id: number) {
 		console.log('Delete profile:', id);
-		// Add your delete logic here
-		profiles = profiles?.filter((profile) => profile.id !== id);
+		modalStore.open({
+			component: () => import('$lib/components/modals/ConfirmationModal.svelte') as any,
+			props: {
+				title: 'Delete Profile',
+				message: 'Are you sure you want to delete this profile? This action cannot be undone.',
+				onConfirm: () => {
+					profiles = profiles?.filter((profile) => profile.id !== id);
+				}
+			},
+			options: { size: 'sm' }
+		});
 	}
 
 	function handleDownload(id: number) {
@@ -24,12 +38,24 @@
 
 	function handleDeleteCV(id: number) {
 		console.log('Delete CV for profile:', id);
-		// Add your CV delete logic here
+		modalStore.open({
+			component: () => import('$lib/components/modals/ConfirmationModal.svelte') as any,
+			props: {
+				title: 'Delete CV',
+				message: 'Are you sure you want to delete this CV?',
+				onConfirm: () => {
+					console.log('Delete CV for profile:', id);
+				}
+			}
+		});
 	}
 
 	function handleCreateProfile() {
 		console.log('Create new profile');
-		// Add your create profile logic here
+		modalStore.open({
+			component: () => import('$lib/components/modals/CreateProfileModal.svelte') as any,
+			options: { size: 'lg' }
+		});
 	}
 </script>
 
