@@ -6,7 +6,7 @@
 	let profiles = profilesData;
 </script>
 
-<section class="flex h-screen w-full flex-col gap-8 overflow-hidden p-4">
+<section class="flex h-full w-full flex-col gap-8 overflow-hidden p-4">
 	<!-- CHECK PROFILE HERE -->
 	{#if profiles.length > 0}
 		<!-- Job Application Form -->
@@ -14,8 +14,10 @@
 			<!-- Left Side - Quick Apply -->
 			<div class="space-y-6">
 				<div class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
-					<div class="flex items-center gap-3">
-						<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
+					<div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+						<div
+							class="flex min-h-10 min-w-10 items-center justify-center rounded-full bg-[#ff4d00]/10"
+						>
 							<Send class="h-5 w-5 text-[#ff4d00]" />
 						</div>
 						<div>
@@ -42,7 +44,7 @@
 								></textarea>
 							</div>
 						</div>
-						<div class="grid grid-cols-2 gap-4">
+						<div class="grid gap-4 sm:grid-cols-2">
 							<div>
 								<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
 									Job Contact Email <span class="text-[#ff4d00]">*</span>
@@ -93,7 +95,7 @@
 									type="application_subject"
 									id="application_subject"
 									placeholder="hr@company.com"
-									class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none cursor-not-allowed"
+									class="w-full cursor-not-allowed rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
 									disabled
 								/>
 							</div>
@@ -106,14 +108,18 @@
 							Generate Cover Letter
 						</button>
 
-						<Button name="send application" icon={Send} classes="w-full justify-center" />
+						<Button
+							name="send application"
+							icon={Send}
+							classes="w-full justify-center hidden md:flex"
+						/>
 					</div>
 				</div>
 			</div>
 
 			<!-- Right Side - Cover Letter Preview -->
 			<div class="rounded-lg border border-gray-200 bg-white p-6">
-				<div class="mb-6 flex items-center gap-3">
+				<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
 					<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 						<FileText class="h-5 w-5 text-[#ff4d00]" />
 					</div>
@@ -130,6 +136,12 @@
 						Click 'Generate Cover Letter' to create a template.
 					</p>
 				</div>
+
+				<Button
+					name="send application"
+					icon={Send}
+					classes="w-full justify-center md:hidden mt-6"
+				/>
 			</div>
 		</div>
 	{:else}
@@ -138,8 +150,10 @@
 			<div class="mx-auto flex max-w-lg flex-col items-center gap-8 text-center">
 				<!-- Icon -->
 				<div class="relative">
-					<div class="flex size-20 items-center justify-center rounded-full bg-[#ff4d00]/10">
-						<Send class="size-10 text-[#ff4d00]/70" />
+					<div
+						class="flex size-16 items-center justify-center rounded-full bg-[#ff4d00]/10 md:size-20"
+					>
+						<Send class="size-5 text-[#ff4d00]/70 md:size-10" />
 					</div>
 					<div
 						class="absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-100"
@@ -150,8 +164,8 @@
 
 				<!-- Content -->
 				<div class="space-y-2">
-					<h2 class="text-3xl font-bold text-gray-700">No Profiles Found</h2>
-					<p class="text-lg leading-relaxed text-gray-500">
+					<h2 class="text-xl font-bold text-gray-700 md:text-3xl">No Profiles Found</h2>
+					<p class="leading-relaxed text-gray-500 md:text-lg">
 						To start applying for jobs, you need to create at least one profile.
 					</p>
 				</div>
@@ -163,8 +177,8 @@
 							<UserPlus class="h-4 w-4 text-[#ff4d00]" />
 						</div>
 						<div class="text-left">
-							<p class="font-medium text-gray-800">Create Profiles</p>
-							<p class="text-sm text-gray-600">Multiple professional profiles</p>
+							<p class="text-xs font-medium text-gray-800 sm:text-base">Create Profiles</p>
+							<p class="text-xs text-gray-600 sm:text-sm">Multiple professional profiles</p>
 						</div>
 					</div>
 
@@ -173,8 +187,8 @@
 							<FileText class="h-4 w-4 text-[#ff4d00]" />
 						</div>
 						<div class="text-left">
-							<p class="font-medium text-gray-800">Auto Cover Letters</p>
-							<p class="text-sm text-gray-600">AI-generated cover letters</p>
+							<p class="text-xs font-medium text-gray-800 sm:text-base">Auto Cover Letters</p>
+							<p class="text-xs text-gray-600 sm:text-base">AI-generated cover letters</p>
 						</div>
 					</div>
 				</div>
@@ -183,17 +197,17 @@
 				<div class="flex w-full flex-col gap-4 sm:flex-row">
 					<a
 						href="/app"
-						class="flex flex-1 items-center justify-center gap-2 rounded-md bg-[#ff4d00] px-6 py-3 font-medium text-white transition-colors hover:bg-[#ff4d00]/90"
+						class="flex flex-1 items-center justify-center gap-2 rounded-md bg-[#ff4d00] px-6 py-1.5 font-medium text-white transition-colors hover:bg-[#ff4d00]/90 md:py-3"
 					>
-						<UserPlus class="h-5 w-5" />
+						<UserPlus class="size-4 md:size-5" />
 						Create Your First Profile
 					</a>
 
 					<button
-						class="flex items-center justify-center gap-2 rounded-md border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+						class="flex items-center justify-center gap-2 rounded-md border border-gray-300 px-6 py-1.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 md:py-3"
 					>
 						Learn More
-						<ArrowRight class="h-4 w-4" />
+						<ArrowRight class="size-4" />
 					</button>
 				</div>
 

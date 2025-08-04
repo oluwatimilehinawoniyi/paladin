@@ -78,7 +78,7 @@
 	}
 </script>
 
-<section class="flex h-screen w-full flex-col gap-8 overflow-hidden p-4 md:pt-14">
+<section class="flex h-full w-full flex-col gap-8 overflow-hidden p-4 md:h-screen md:pt-14">
 	<!-- header -->
 	<div class="">
 		<h1 class="text-2xl font-bold text-gray-700 capitalize">settings</h1>
@@ -89,7 +89,7 @@
 	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-4">
 		<!-- Profile Information Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex items-start gap-3">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 					<User class="h-5 w-5 text-[#ff4d00]" />
 				</div>
@@ -154,7 +154,7 @@
 
 		<!-- Notification Preferences Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex items-start gap-3">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 					<Bell class="h-5 w-5 text-[#ff4d00]" />
 				</div>
@@ -225,7 +225,7 @@
 
 		<!-- Application Preferences Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex items-start gap-3">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 					<SettingsIcon class="h-5 w-5 text-[#ff4d00]" />
 				</div>
@@ -281,7 +281,7 @@
 
 		<!-- Appearance Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex items-start gap-3">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 					<Cookie class="h-5 w-5 text-[#ff4d00]" />
 				</div>
@@ -291,7 +291,7 @@
 				</div>
 			</div>
 
-			<div class="flex items-center justify-between">
+			<div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
 				<div>
 					<h3 class="font-medium text-gray-800">Theme</h3>
 					<p class="text-sm text-gray-600">Choose between light and dark mode</p>
@@ -313,7 +313,7 @@
 
 		<!-- Data & Privacy Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex items-start gap-3">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
 					<Shield class="h-5 w-5 text-[#ff4d00]" />
 				</div>
@@ -324,7 +324,7 @@
 			</div>
 
 			<div class="space-y-4">
-				<div class="flex items-center justify-between">
+				<div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
 					<div>
 						<h3 class="font-medium text-gray-800">Export Your Data</h3>
 						<p class="text-sm text-gray-600">Download a copy of all your data</p>
@@ -338,7 +338,7 @@
 					</button>
 				</div>
 
-				<div class="flex items-center justify-between">
+				<div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
 					<div>
 						<h3 class="font-medium text-red-600">Delete Account</h3>
 						<p class="text-sm text-gray-600">Permanently delete your account and all data</p>

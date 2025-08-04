@@ -645,7 +645,7 @@
 </section>
 
 <style>
-	:global(.custom-scrollbar) {
+	.custom-scrollbar {
 		scrollbar-width: thin;
 		scrollbar-color: #ff4d00 transparent;
 	}
