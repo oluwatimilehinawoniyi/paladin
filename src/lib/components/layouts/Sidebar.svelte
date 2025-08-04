@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { BarChart3, FileText, LogOut, Send, Settings, User } from '@lucide/svelte';
+	import {
+		BarChart3,
+		FileText,
+		LogOut,
+		MessageSquareMore,
+		Send,
+		Settings,
+		User
+	} from '@lucide/svelte';
 	import SidebarMenuItem from '../ui/SidebarMenuItem.svelte';
 	import logo from '$lib/assets/logo.png';
 	import Button from '../ui/Button.svelte';
@@ -49,6 +57,14 @@
 				<SidebarMenuItem {Icon} title={item.title} link={item.id} {isActive} />
 			{/each}
 		</div>
+	</div>
+
+	<!-- REQUEST A FEATURE -->
+	<div class="flex h-36 flex-col items-center justify-between rounded-md bg-[#030000] p-3">
+		<p class="textcenter text-sm font-medium text-white/80">
+			Is there something you'll love paladin to have/do for you?
+		</p>
+		<Button name="request a feature" classes="w-full bg- text-xs font-normal" />
 	</div>
 
 	<!-- FOOTER -->

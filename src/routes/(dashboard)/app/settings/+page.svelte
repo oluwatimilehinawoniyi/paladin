@@ -124,7 +124,7 @@
 					/>
 				</div>
 
-				<div class="md:col-span-2">
+				<div class="md:col-span2">
 					<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
 						Email Address
 					</label>

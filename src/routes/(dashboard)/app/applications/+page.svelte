@@ -26,39 +26,76 @@
 
 					<div class="space-y-4">
 						<div>
-							<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-								Job Contact Email <span class="text-[#ff4d00]">*</span>
+							<label for="job_description" class="mb-1 block text-sm font-medium text-gray-700">
+								Job Description <span class="text-[#ff4d00]">*</span>
+							</label>
+							<div class="relative">
+								<Mail
+									class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
+								/>
+								<textarea
+									name="job_description"
+									rows="3"
+									id="job_description"
+									placeholder="hr@company.com"
+									class="w-full resize-none rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+								></textarea>
+							</div>
+						</div>
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+									Job Contact Email <span class="text-[#ff4d00]">*</span>
+								</label>
+								<div class="relative">
+									<Mail
+										class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
+									/>
+									<input
+										type="email"
+										id="email"
+										placeholder="hr@company.com"
+										class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									/>
+								</div>
+							</div>
+
+							<div>
+								<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
+									Select Profile <span class="text-[#ff4d00]">*</span>
+								</label>
+								<div class="relative">
+									<UserPlus
+										class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
+									/>
+									<select
+										id="profile"
+										class="w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									>
+										<option value="">Choose a profile</option>
+										{#each profiles as profile}
+											<option value={profile.id}>{profile.title}</option>
+										{/each}
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<label for="application_subject" class="mb-1 block text-sm font-medium text-gray-700">
+								Application Subject <span class="text-[#ff4d00]">*</span>
 							</label>
 							<div class="relative">
 								<Mail
 									class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
 								/>
 								<input
-									type="email"
-									id="email"
+									type="application_subject"
+									id="application_subject"
 									placeholder="hr@company.com"
-									class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none cursor-not-allowed"
+									disabled
 								/>
-							</div>
-						</div>
-
-						<div>
-							<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
-								Select Profile <span class="text-[#ff4d00]">*</span>
-							</label>
-							<div class="relative">
-								<UserPlus
-									class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
-								/>
-								<select
-									id="profile"
-									class="w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-								>
-									<option value="">Choose a profile</option>
-									{#each profiles as profile}
-										<option value={profile.id}>{profile.title}</option>
-									{/each}
-								</select>
 							</div>
 						</div>
 
