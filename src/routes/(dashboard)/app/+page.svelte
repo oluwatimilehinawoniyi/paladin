@@ -59,7 +59,7 @@
 	}
 </script>
 
-<section class="flex h-screen w-full flex-col gap-8 overflow-hidden p-4 md:pt-14">
+<section class="flex w-full flex-col gap-8 overflow-hidden p-4 md:h-screen md:pt-14">
 	<!-- header -->
 	<div class="flex w-full flex-col justify-between gap-4 sm:flex-row sm:items-end">
 		<div class="">
@@ -73,7 +73,7 @@
 
 	{#if profiles.length > 0}
 		<div
-			class="custom-scrollbar grid hfull gap-4 overflow-y-scroll rounded-md border border-gray-100 p-2 sm:grid-cols-2 lg:grid-cols-3"
+			class="custom-scrollbar hfull grid gap-4 overflow-y-scroll rounded-md border border-gray-100 p-2 sm:grid-cols-2 lg:grid-cols-3"
 		>
 			{#each profiles as profile (profile.id)}
 				<div class="flex w-fit flex-col justify-between gap-4 rounded-lg p-4 shadow md:p-6">
