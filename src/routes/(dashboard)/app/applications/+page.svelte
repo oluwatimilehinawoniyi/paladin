@@ -3,7 +3,7 @@
 	import { Send, UserPlus, Mail, FileText, ArrowRight } from '@lucide/svelte';
 	import { profilesData } from '$lib/data/profiles';
 
-	let profiles = profilesData; // Set to [] to show no profile state
+	let profiles = profilesData;
 </script>
 
 <section class="flex h-screen w-full flex-col gap-8 overflow-hidden p-4">
