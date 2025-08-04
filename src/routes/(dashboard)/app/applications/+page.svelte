@@ -163,7 +163,7 @@
 				<!-- Help Text -->
 				<p class="text-sm text-gray-500">
 					Need help? Check out our
-					<a href="#" class="text-[#ff4d00] hover:underline">step-by-step guide</a>
+					<a href="/app/" class="text-[#ff4d00] hover:underline">step-by-step guide</a>
 					to creating your first profile.
 				</p>
 			</div>
