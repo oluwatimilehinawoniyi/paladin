@@ -48,12 +48,29 @@
 		}
 	}
 
+	// Handle escape key
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			closeMenu();
+		}
+	}
+
 	// Close menu when route changes
 	$effect(() => {
 		const unsubscribe = page.subscribe(() => {
 			closeMenu();
 		});
 		return unsubscribe;
+	});
+
+	// Add/remove event listeners for escape key
+	$effect(() => {
+		if (isOpen) {
+			document.addEventListener('keydown', handleKeydown);
+			return () => {
+				document.removeEventListener('keydown', handleKeydown);
+			};
+		}
 	});
 </script>
 
@@ -83,19 +100,19 @@
 
 <!-- Mobile Menu Overlay -->
 {#if isOpen}
-	<div
-		class="fixed inset-0 z-50 md:hidden"
-		onclick={handleBackdropClick}
-		onkeydown={(e) => e.key === 'Escape' && closeMenu()}
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
-	>
+	<div class="fixed inset-0 z-50 h-dvh md:hidden">
 		<!-- Backdrop -->
-		<div class="absolute inset-0 bg-black/50"></div>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div
+			class="absolute inset-0 bg-black/50"
+			onclick={handleBackdropClick}
+			role="button"
+			tabindex="-1"
+			aria-label="Close menu"
+		></div>
 
 		<!-- Slide-out Menu -->
-		<div class="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-xl">
+		<div class="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white pb-16 shadow-xl">
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
 				<div class="flex items-center gap-2">
@@ -150,12 +167,7 @@
 					</div>
 
 					<!-- Action Buttons -->
-					<div class="space-y-3">
-						<Button
-							name="Create Profile"
-							icon={UserRoundPlus}
-							classes="w-full justify-center text-sm"
-						/>
+					<div class="">
 						<button
 							class="flex w-full items-center justify-center gap-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
 						>
