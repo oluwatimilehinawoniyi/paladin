@@ -4,7 +4,6 @@ export interface ModalConfig {
 	id: string;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	component: any;
-	// component: ComponentType | (() => Promise<{ default: ComponentType }>);
 	props?: Record<string, unknown>;
 	options?: {
 		closeOnEscape?: boolean;

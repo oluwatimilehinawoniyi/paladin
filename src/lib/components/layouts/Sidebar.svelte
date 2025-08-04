@@ -14,22 +14,17 @@
 		{
 			title: 'Applications',
 			icon: Send,
-			id: 'applications'
-		},
-		{
-			title: 'History',
-			icon: FileText,
-			id: 'history'
+			id: '/applications'
 		},
 		{
 			title: 'Analytics',
 			icon: BarChart3,
-			id: 'analytics'
+			id: '/analytics'
 		},
 		{
 			title: 'Settings',
 			icon: Settings,
-			id: 'settings'
+			id: '/settings'
 		}
 	];
 </script>
@@ -49,7 +44,7 @@
 			{#each menuItems as item (item.id)}
 				{@const Icon = item.icon}
 				{@const isActive =
-					$page.url.pathname === `/app/${item.id}` ||
+					$page.url.pathname === `/app${item.id}` ||
 					($page.url.pathname === '/app' && item.id === '')}
 				<SidebarMenuItem {Icon} title={item.title} link={item.id} {isActive} />
 			{/each}

@@ -73,7 +73,7 @@
 
 	{#if profiles.length > 0}
 		<div
-			class="custom-scrollbar grid h-full gap-4 overflow-y-scroll rounded-md border border-gray-100 p-2 sm:grid-cols-2 md:grid-cols-3"
+			class="custom-scrollbar grid hfull gap-4 overflow-y-scroll rounded-md border border-gray-100 p-2 sm:grid-cols-2 md:grid-cols-3"
 		>
 			{#each profiles as profile (profile.id)}
 				<div class="flex w-fit flex-col justify-between gap-4 rounded-lg p-4 shadow md:p-6">

@@ -90,7 +90,7 @@
 		bottom: 'items-end justify-center pb-16'
 	};
 
-	const backdropClasses = twMerge('fixed inset-0 z-50 flex', positionClasses[position]);
+	const backdropClasses = twMerge('fixed p-4 inset-0 z-50 flex', positionClasses[position]);
 
 	const modalClasses = twMerge('relative w-full bg-white rounded-lg shadow-xl', sizeClasses[size]);
 </script>

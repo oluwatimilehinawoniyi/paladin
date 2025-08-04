@@ -8,7 +8,7 @@
 		: ''}"
 >
 	<a
-		href="/app/{link}"
+		href="/app{link}"
 		class="flex items-center gap-2 transition-colors duration-200 ease-linear {isActive
 			? 'text-white'
 			: 'text-[#030000] group-hover:text-white'}"
