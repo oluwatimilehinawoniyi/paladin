@@ -29,7 +29,7 @@
 	];
 </script>
 
-<section class="flex w-[200px] flex-col justify-between bg-gray-50 p-4">
+<section class="hidden w-[200px] flex-col justify-between bg-gray-50 p-4 md:flex">
 	<div class="flex flex-col gap-8">
 		<!-- HEADER -->
 		<div class="rounded">
