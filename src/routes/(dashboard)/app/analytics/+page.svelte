@@ -189,7 +189,7 @@
 	}
 </script>
 
-<section class="flex h-screen w-full flex-col gap-8 overflow-hidden p-4 md:pt-14">
+<section class="flex w-full flex-col gap-8 overflow-hidden p-4 md:h-screen md:pt-14">
 	<!-- Header -->
 	<div class="flex w-full flex-col justify-between gap-4 sm:flex-row sm:items-end">
 		<div>
@@ -198,7 +198,7 @@
 		</div>
 	</div>
 
-	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-4">
+	<div class="custom-scrollbar flex-1 space-y-8 overflow-x-hidden overflow-y-auto pb-4">
 		<!-- Summary Statistics Cards -->
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			<!-- Total Applications -->
@@ -266,7 +266,7 @@
 		</div>
 
 		<!-- Application History Table -->
-		<div class="rounded-lg border border-gray-200 bg-white p-6">
+		<div class="overflow-x-scroll rounded-lg border border-gray-200 bg-white p-6">
 			<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h3 class="text-lg font-semibold text-gray-800">Application History</h3>
@@ -640,7 +640,6 @@
 				</div>
 			</div>
 		</div>
-
 	</div>
 </section>
 

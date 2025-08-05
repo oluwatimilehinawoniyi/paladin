@@ -2,27 +2,10 @@
 	import logo from '$lib/assets/logo.png';
 </script>
 
-<nav class="mx-auto flex max-w-lg items-center justify-between rounded-xl bg-black p-2">
+<nav class="mx-auto my-8 flex max-w-lg items-center justify-between rounded-xl bg-black p-2">
 	<a href="/" class="block size-8" aria-label="logo">
 		<img src={logo} alt="logo" class="size-full" />
 	</a>
-
-	<ul class="flex items-center gap-8 text-sm font-medium capitalize">
-		<li>
-			<a
-				href="/"
-				class="text-white/70 transition-colors duration-200 ease-linear hover:text-[#ff4d00]"
-				>home</a
-			>
-		</li>
-		<li>
-			<a
-				href="/"
-				class="text-white/70 transition-colors duration-200 ease-linear hover:text-[#ff4d00]"
-				>about</a
-			>
-		</li>
-	</ul>
 
 	<a
 		href="/login"
