@@ -332,7 +332,7 @@
 					<h2 class="text-xl font-semibold text-gray-800">Change Password</h2>
 				</div>
 			</div>
-			<div class="space-y-4">
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Old password -->
 				<div class="w-full max-w-2xl">
 					<label for="oldPassword" class="mb-1 block text-sm font-medium text-gray-700">
@@ -386,47 +386,19 @@
 						</div>
 					</div>
 				</div>
+			</div>
+			<div class="px-4 py-2">
+				<ul class="list-disc text-gray-600 text-sm">
+					<li>Minimum characters 8</li>
+					<li>One uppercase character</li>
+					<li>One lowercase character</li>
+					<li>One special character</li>
+					<li>One number</li>
+				</ul>
+			</div>
 
-				<!-- Confirm New password -->
-				<div class="w-full max-w-2xl">
-					<label for="confirmNewPassword" class="mb-1 block text-sm font-medium text-gray-700">
-						Confirm New Password
-					</label>
-					<div class="relative">
-						<input
-							type={isConfirmNewPasswordOpen ? 'text' : 'password'}
-							id="confirmNewPassword"
-							bind:value={confirmNewPassword}
-							placeholder="**********"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-						/>
-
-						<div
-							onclick={() => (isConfirmNewPasswordOpen = !isConfirmNewPasswordOpen)}
-							class="absolute top-1/2 right-3 -translate-y-1/2 transform"
-						>
-							{#if isConfirmNewPasswordOpen}
-								<Eye class="h-5 w-5 text-gray-400" />
-							{:else}
-								<EyeOff class="h-5 w-5 text-gray-400" />
-							{/if}
-						</div>
-					</div>
-				</div>
-
-				<div class="px-4 py-2">
-					<ul class="list-disc text-gray-600">
-						<li>Minimum characters 12</li>
-						<li>One uppercase character</li>
-						<li>One lowercase character</li>
-						<li>One special character</li>
-						<li>One number</li>
-					</ul>
-				</div>
-
-				<div class="mt-6">
-					<Button name="save password" icon={Save} onClick="" />
-				</div>
+			<div class="mt-6">
+				<Button name="save password" icon={Save} />
 			</div>
 		</div>
 

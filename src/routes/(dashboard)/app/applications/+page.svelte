@@ -37,8 +37,8 @@
 									name="job_description"
 									rows="3"
 									id="job_description"
-									placeholder="Provide an overview of the position, including the role's responsibility, required skills and qualifications"
-									class="w-full resize-none rounded-md border border-gray-300 py-2 pr-3 pl-5 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									placeholder="Paste the job description here, if any"
+									class="w-full resize-none rounded-md border border-gray-300 p-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
 								></textarea>
 							</div>
 						</div>
