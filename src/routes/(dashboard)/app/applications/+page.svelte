@@ -1,9 +1,10 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
-	import { Send, UserPlus, Mail, FileText, ArrowRight } from '@lucide/svelte';
+	import { Send, UserPlus, Mail, FileText, ArrowRight, PencilLine, Check } from '@lucide/svelte';
 	import { profilesData } from '$lib/data/profiles';
 
 	let profiles = profilesData;
+	let canEditSubject: boolean = $state(true);
 </script>
 
 <section class="flex h-full w-full flex-col gap-8 overflow-hidden p-4">
@@ -32,15 +33,12 @@
 								Job Description <span class="text-[#ff4d00]">*</span>
 							</label>
 							<div class="relative">
-								<Mail
-									class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
-								/>
 								<textarea
 									name="job_description"
 									rows="3"
 									id="job_description"
-									placeholder="hr@company.com"
-									class="w-full resize-none rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									placeholder="Provide an overview of the position, including the role's responsibility, required skills and qualifications"
+									class="w-full resize-none rounded-md border border-gray-300 py-2 pr-3 pl-5 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
 								></textarea>
 							</div>
 						</div>
@@ -94,10 +92,23 @@
 								<input
 									type="application_subject"
 									id="application_subject"
-									placeholder="hr@company.com"
-									class="w-full cursor-not-allowed rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-									disabled
+									placeholder="Application for [ Job Title ] position"
+									class="w-full {canEditSubject
+										? 'cursor-text'
+										: 'cursor-not-allowed'} rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									disabled={!canEditSubject}
 								/>
+								<button
+									type="button"
+									onclick={() => (canEditSubject = !canEditSubject)}
+									class="absolute top-1/2 right-3 h-8 w-8 -translate-y-1/2 transform cursor-pointer"
+								>
+									{#if canEditSubject}
+										<Check class="text-green-500" />
+									{:else}
+										<PencilLine class="text-[#ff4d00]" />
+									{/if}
+								</button>
 							</div>
 						</div>
 
