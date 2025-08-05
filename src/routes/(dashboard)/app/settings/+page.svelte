@@ -9,7 +9,10 @@
 		Sun,
 		Moon,
 		Save,
-		Cookie
+		Cookie,
+		KeyRound,
+		Eye,
+		EyeOff
 	} from '@lucide/svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { modalStore } from '$lib/stores/modalStore';
@@ -30,6 +33,14 @@
 	let autoSaveApplications = $state(true);
 	let defaultCoverLetter = $state(true);
 	let profileReminders = $state(true);
+
+	// Change password state
+	let oldPassword = $state('');
+	let newPassword = $state('');
+	let confirmNewPassword = $state('');
+	let isOldPasswordOpen = $state(false);
+	let isNewPasswordOpen = $state(false);
+	let isConfirmNewPasswordOpen = $state(false);
 
 	// Theme state
 	let isDarkMode = $state(false);
@@ -308,6 +319,114 @@
 						Dark Mode
 					{/if}
 				</button>
+			</div>
+		</div>
+
+		<!-- Change password -->
+		<div class="rounded-lg border border-gray-200 bg-white p-6">
+			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
+				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
+					<KeyRound class="h-5 w-5 text-[#ff4d00]" />
+				</div>
+				<div>
+					<h2 class="text-xl font-semibold text-gray-800">Change Password</h2>
+				</div>
+			</div>
+			<div class="space-y-4">
+				<!-- Old password -->
+				<div class="w-full max-w-2xl">
+					<label for="oldPassword" class="mb-1 block text-sm font-medium text-gray-700">
+						Old Password
+					</label>
+					<div class="relative">
+						<input
+							type={isOldPasswordOpen ? 'text' : 'password'}
+							id="oldPassword"
+							bind:value={oldPassword}
+							placeholder="**********"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						/>
+
+						<div
+							onclick={() => (isOldPasswordOpen = !isOldPasswordOpen)}
+							class="absolute top-1/2 right-3 -translate-y-1/2 transform"
+						>
+							{#if isOldPasswordOpen}
+								<Eye class="h-5 w-5 text-gray-400" />
+							{:else}
+								<EyeOff class="h-5 w-5 text-gray-400" />
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- New password -->
+				<div class="w-full max-w-2xl">
+					<label for="newPassword" class="mb-1 block text-sm font-medium text-gray-700">
+						New Password
+					</label>
+					<div class="relative">
+						<input
+							type={isNewPasswordOpen ? 'text' : 'password'}
+							id="newPassword"
+							bind:value={newPassword}
+							placeholder="**********"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						/>
+
+						<div
+							onclick={() => (isNewPasswordOpen = !isNewPasswordOpen)}
+							class="absolute top-1/2 right-3 -translate-y-1/2 transform"
+						>
+							{#if isNewPasswordOpen}
+								<Eye class="h-5 w-5 text-gray-400" />
+							{:else}
+								<EyeOff class="h-5 w-5 text-gray-400" />
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Confirm New password -->
+				<div class="w-full max-w-2xl">
+					<label for="confirmNewPassword" class="mb-1 block text-sm font-medium text-gray-700">
+						Confirm New Password
+					</label>
+					<div class="relative">
+						<input
+							type={isConfirmNewPasswordOpen ? 'text' : 'password'}
+							id="confirmNewPassword"
+							bind:value={confirmNewPassword}
+							placeholder="**********"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						/>
+
+						<div
+							onclick={() => (isConfirmNewPasswordOpen = !isConfirmNewPasswordOpen)}
+							class="absolute top-1/2 right-3 -translate-y-1/2 transform"
+						>
+							{#if isConfirmNewPasswordOpen}
+								<Eye class="h-5 w-5 text-gray-400" />
+							{:else}
+								<EyeOff class="h-5 w-5 text-gray-400" />
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<div class="px-4 py-2">
+					<ul class="list-disc text-gray-600">
+						<li>Minimum characters 12</li>
+						<li>One uppercase character</li>
+						<li>One lowercase character</li>
+						<li>One special character</li>
+						<li>One number</li>
+					</ul>
+				</div>
+
+				<div class="mt-6">
+					<Button name="save password" icon={Save} onClick="" />
+				</div>
 			</div>
 		</div>
 
