@@ -1,1 +1,27 @@
 @import 'tailwindcss';
+
+@layer base {
+	.prose h2 {
+		@apply mt-8 mb-4 text-2xl font-bold text-gray-900;
+	}
+
+	.prose h3 {
+		@apply mt-6 mb-3 text-xl font-semibold text-gray-800;
+	}
+
+	.prose p {
+		@apply mb-4 leading-relaxed text-gray-600;
+	}
+
+	.prose ul {
+		@apply mb-4 space-y-2 text-gray-600;
+	}
+
+	.prose li {
+		@apply leading-relaxed;
+	}
+
+	.prose strong {
+		@apply font-semibold text-gray-900;
+	}
+}
