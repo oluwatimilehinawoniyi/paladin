@@ -44,7 +44,7 @@
 	<!-- Content -->
 	<section class="py-16">
 		<div class="container mx-auto px-4">
-			<div class="prose prose-lg prose-gray mx-auto max-w-4xl max-w-none">
+			<div class="prose prose-lg prose-gray mx-auto max-w-4xl">
 				<!-- Manually formatted content from markdown -->
 				<h2>Introduction</h2>
 				<p>
