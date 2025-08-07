@@ -1,15 +1,196 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
-	import { Send, UserPlus, Mail, FileText, ArrowRight, PencilLine, Check } from '@lucide/svelte';
-	import { profilesData } from '$lib/data/profiles';
+	import {
+		Send,
+		UserPlus,
+		Mail,
+		FileText,
+		ArrowRight,
+		PencilLine,
+		Check,
+		AlertCircle
+	} from '@lucide/svelte';
+	import { apiService, type ProfileResponse } from '$lib/api/apiService';
+	import { onMount } from 'svelte';
 
-	let profiles = profilesData;
-	let canEditSubject: boolean = $state(true);
+	// State
+	let profiles: ProfileResponse[] = $state([]);
+	let isLoadingProfiles = $state(true);
+	let isSendingApplication = $state(false);
+	let error = $state('');
+	let successMessage = $state('');
+
+	// Form state
+	let jobDescription = $state('');
+	let jobEmail = $state('');
+	let selectedProfileId = $state('');
+	let applicationSubject = $state('');
+	let canEditSubject = $state(true);
+	let coverLetter = $state('');
+	let companyName = $state('');
+	let jobTitle = $state('');
+
+	// Load profiles on mount
+	onMount(async () => {
+		await loadProfiles();
+	});
+
+	async function loadProfiles() {
+		try {
+			isLoadingProfiles = true;
+			error = '';
+			const response = await apiService.getProfiles();
+			profiles = response.data || [];
+		} catch (err) {
+			console.error('Failed to load profiles:', err);
+			error = `Failed to load profiles: ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			isLoadingProfiles = false;
+		}
+	}
+
+	// Auto-generate application subject when profile or company changes
+	$effect(() => {
+		if (selectedProfileId && companyName && jobTitle) {
+			const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
+			if (selectedProfile) {
+				applicationSubject = `Application for ${jobTitle} position at ${companyName}`;
+			}
+		}
+	});
+
+	// Generate cover letter based on job description and selected profile
+	function generateCoverLetter() {
+		if (!selectedProfileId || !jobDescription.trim()) {
+			error = 'Please select a profile and provide a job description first.';
+			return;
+		}
+
+		const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
+		if (!selectedProfile) return;
+
+		// Extract company name from email if not provided
+		if (!companyName && jobEmail) {
+			const emailDomain = jobEmail.split('@')[1];
+			companyName = emailDomain.split('.')[0];
+		}
+
+		// Basic cover letter template
+		coverLetter = `Dear Hiring Manager,
+
+I am writing to express my interest in the ${jobTitle || 'position'} at ${companyName || 'your company'}.
+
+As a ${selectedProfile.title} with expertise in ${selectedProfile.skills.slice(0, 3).join(', ')}, I believe I would be a valuable addition to your team.
+
+${selectedProfile.summary}
+
+Based on the job description provided, I am confident that my skills in ${selectedProfile.skills.join(', ')} align well with your requirements.
+
+I have attached my CV for your review and would welcome the opportunity to discuss how I can contribute to your team.
+
+Thank you for considering my application.
+
+Best regards,
+[Your Name]`;
+
+		successMessage = 'Cover letter generated successfully! You can edit it before sending.';
+		setTimeout(() => (successMessage = ''), 3000);
+	}
+
+	async function handleSendApplication() {
+		if (!validateForm()) return;
+
+		error = '';
+		isSendingApplication = true;
+
+		try {
+			const applicationData = {
+				profileId: selectedProfileId,
+				jobEmail: jobEmail.trim(),
+				subject: applicationSubject.trim(),
+				bodyText: coverLetter.trim(),
+				company: companyName.trim() || jobEmail.split('@')[1].split('.')[0],
+				jobTitle: jobTitle.trim() || 'Position'
+			};
+
+			const response = await apiService.sendJobApplication(applicationData);
+			console.log('Application sent successfully:', response);
+
+			successMessage = 'Application sent successfully!';
+
+			// Reset form
+			resetForm();
+		} catch (err) {
+			console.error('Failed to send application:', err);
+			error = `Failed to send application: ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			isSendingApplication = false;
+		}
+	}
+
+	function validateForm(): boolean {
+		if (!selectedProfileId) {
+			error = 'Please select a profile.';
+			return false;
+		}
+
+		if (!jobEmail.trim()) {
+			error = 'Please provide a job contact email.';
+			return false;
+		}
+
+		if (!applicationSubject.trim()) {
+			error = 'Please provide an application subject.';
+			return false;
+		}
+
+		if (!coverLetter.trim()) {
+			error = 'Please generate or write a cover letter.';
+			return false;
+		}
+
+		return true;
+	}
+
+	function resetForm() {
+		jobDescription = '';
+		jobEmail = '';
+		selectedProfileId = '';
+		applicationSubject = '';
+		coverLetter = '';
+		companyName = '';
+		jobTitle = '';
+		error = '';
+	}
 </script>
 
 <section class="flex h-full w-full flex-col gap-8 overflow-hidden p-4">
+	<!-- Success/Error Messages -->
+	{#if successMessage}
+		<div class="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3">
+			<Check class="h-5 w-5 text-green-600" />
+			<p class="text-sm text-green-800">{successMessage}</p>
+		</div>
+	{/if}
+
+	{#if error}
+		<div class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
+			<AlertCircle class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+			<p class="text-sm text-red-800">{error}</p>
+		</div>
+	{/if}
+
 	<!-- CHECK PROFILE HERE -->
-	{#if profiles.length > 0}
+	{#if isLoadingProfiles}
+		<div class="flex h-full items-center justify-center">
+			<div class="text-center">
+				<div
+					class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#ff4d00] border-t-transparent"
+				></div>
+				<p class="mt-2 text-gray-600">Loading profiles...</p>
+			</div>
+		</div>
+	{:else if profiles.length > 0}
 		<!-- Job Application Form -->
 		<div class="grid h-full grid-cols-1 gap-8 lg:grid-cols-2">
 			<!-- Left Side - Quick Apply -->
