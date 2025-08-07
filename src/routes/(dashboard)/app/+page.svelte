@@ -1,11 +1,33 @@
 <script lang="ts">
+	import { apiService } from '$lib/api/apiService';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import { profilesData } from '$lib/data/profiles';
 	import { modalStore } from '$lib/stores/modalStore';
 	import { Calendar, Download, Plus, Save, SquarePen, Trash2, UserRoundPlus } from '@lucide/svelte';
+	import { onMount } from 'svelte';
 
-	let profiles = profilesData;
+	let profiles = $state<any[]>([]);
+	let isLoadingProfile = $state(false);
+	let errorMessage = $state('');
+
+	// Load user data on mount
+	onMount(async () => {
+		await loadUserProfile();
+	});
+
+	async function loadUserProfile() {
+		try {
+			isLoadingProfile = true;
+			const response = await apiService.getProfiles();
+			console.log(response.data);
+			profiles = response.data;
+		} catch (error) {
+			console.error('Failed to load user profile:', error);
+			errorMessage = 'Failed to load user profile';
+		} finally {
+			isLoadingProfile = false;
+		}
+	}
 
 	function handleEdit(id: number) {
 		console.log('Edit profile:', id);

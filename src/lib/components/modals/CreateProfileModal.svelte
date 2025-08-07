@@ -13,7 +13,7 @@
 
 	// Loading states
 	let isCreatingProfile = $state(false);
-	let isUploadingCV = $state(false);
+	// let isUploadingCV = $state(false);
 	let error = $state('');
 
 	// Form validation
@@ -55,65 +55,46 @@
 	}
 
 	async function handleCreateProfile() {
-		if (!isFormValid) return;
+		if (!isFormValid || !cvFile) return;
 
 		error = '';
 		isCreatingProfile = true;
 
 		try {
-			// Step 1: Create the profile first (without CV)
 			console.log('Step 1: Creating profile...');
-			const profileResponse = await apiService.createProfile({
-				title: title.trim(),
-				summary: summary.trim(),
-				skills: skills
+			const profileResponse = await apiService.createProfileWithCV(
+				title.trim(),
+				summary.trim(),
+				skills
 					.split(',')
 					.map((s) => s.trim())
-					.filter(Boolean)
-				// Don't include cvId yet
-			});
+					.filter(Boolean),
+				cvFile
+			);
 
-			const newProfile = profileResponse.data;
-			console.log('Profile created successfully:', newProfile);
-
-			// Step 2: Upload CV and link it to the profile
-			if (cvFile && newProfile.id) {
-				isUploadingCV = true;
-				console.log('Step 2: Uploading CV...');
-
-				try {
-					const cvResponse = await apiService.uploadCV(cvFile, newProfile.id);
-					console.log('CV uploaded successfully:', cvResponse);
-				} catch (cvError) {
-					console.error('CV upload failed:', cvError);
-					// Profile is created but CV upload failed
-					error =
-						'Profile created, but CV upload failed. You can upload it later from the profile page.';
-				}
-			}
+			console.log('Profile created successfully:', profileResponse);
 
 			closeModal();
 			openModal({
 				component: () => import('./SuccessModal.svelte'),
 				props: {
 					title: 'Profile Created',
-					message: cvFile
-						? 'Your profile and CV have been created successfully.'
-						: 'Your profile has been created. You can upload your CV later.'
+					message: 'Your profile and CV have been created successfully.'
 				},
 				options: { size: 'sm' }
 			});
+
+			window.location.reload();
 		} catch (error) {
 			console.error('Profile creation failed:', error);
 			error = `Failed to create profile: ${error instanceof Error ? error.message : 'Unknown error'}`;
 		} finally {
 			isCreatingProfile = false;
-			isUploadingCV = false;
 		}
 	}
+
 	// Computed loading message
 	let loadingMessage = $derived(() => {
-		if (isUploadingCV) return 'Uploading CV...';
 		if (isCreatingProfile) return 'Creating profile...';
 		return '';
 	});
@@ -213,7 +194,7 @@
 	<div class="flex gap-3 pt-2">
 		<Button
 			name={loadingMessage() || 'create profile'}
-			icon={isCreatingProfile || isUploadingCV ? Upload : Save}
+			icon={isCreatingProfile ? Upload : Save}
 			onClick={handleCreateProfile}
 			classes={`${!isFormValid || isCreatingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}
 		/>

@@ -9,19 +9,25 @@ export interface ProfileCreateRequest {
 }
 
 export interface ProfileResponse {
-	id: string;
-	title: string;
-	summary: string;
-	skills: string[];
-	cv?: {
-		id: string;
-		fileName: string;
-		url: string;
-		contentType: string;
-		size: number;
-		uploadedAt: string;
-	};
-	createdAt: string;
+	message: string;
+	data: [
+		{
+			id: string;
+			title: string;
+			summary: string;
+			skills: string[];
+			cv?: {
+				id: string;
+				fileName: string;
+				url: string;
+				contentType: string;
+				size: number;
+				uploadedAt: string;
+			};
+			createdAt: string;
+		}
+	];
+	httpStatus: string;
 }
 
 export interface ApiResponse<T> {
@@ -44,6 +50,32 @@ class ApiService {
 		if (!response.ok) {
 			const error = await response.text();
 			throw new Error(`API Error: ${response.status} - ${error}`);
+		}
+
+		return response.json();
+	}
+
+	async createProfileWithCV(
+		title: string,
+		summary: string,
+		skills: string[],
+		cvFile: File
+	): Promise<ApiResponse<ProfileResponse>> {
+		const formData = new FormData();
+		formData.append('title', title);
+		formData.append('summary', summary);
+		formData.append('skills', JSON.stringify(skills));
+		formData.append('file', cvFile);
+
+		const response = await fetch(`${API_BASE_URL}/v1/profiles`, {
+			method: 'POST',
+			credentials: 'include',
+			body: formData
+		});
+
+		if (!response.ok) {
+			const error = await response.text();
+			throw new Error(`Profile Creation Error: ${response.status} - ${error}`);
 		}
 
 		return response.json();
@@ -134,9 +166,25 @@ class ApiService {
 		return this.makeRequest('/v1/job-applications/me');
 	}
 
-	// Auth
+	// Auth & user mgmt
 	async getCurrentUser(): Promise<ApiResponse<any>> {
-		return this.makeRequest('/auth/me');
+		return this.makeRequest('/v1/users/me');
+	}
+
+	async updateUserProfile(userData: {
+		firstName?: string;
+		lastName?: string;
+	}): Promise<ApiResponse<any>> {
+		return this.makeRequest('/v1/users/me', {
+			method: 'PUT',
+			body: JSON.stringify(userData)
+		});
+	}
+
+	async deleteAccount(): Promise<ApiResponse<any>> {
+		return this.makeRequest('/v1/users/me', {
+			method: 'DELETE'
+		});
 	}
 
 	async login(
