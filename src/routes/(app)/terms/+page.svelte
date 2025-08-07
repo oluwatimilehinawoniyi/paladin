@@ -44,7 +44,7 @@
 	<!-- Content -->
 	<section class="py-16">
 		<div class="container mx-auto px-4">
-			<div class="prose prose-lg prose-gray mx-auto max-w-4xl max-w-none">
+			<div class="prose prose-lg prose-gray mx-auto max-w-4xl">
 				<h2>Agreement to Terms</h2>
 				<p>
 					By accessing or using Paladin ("the Platform," "Service," "we," "us," or "our"), you
