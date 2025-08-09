@@ -8,15 +8,18 @@
 		ArrowRight,
 		PencilLine,
 		Check,
-		AlertCircle
+		AlertCircle,
+		Wand2
 	} from '@lucide/svelte';
 	import { apiService, type ProfileResponse } from '$lib/api/apiService';
+	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
 
 	// State
 	let profiles: ProfileResponse[] = $state([]);
 	let isLoadingProfiles = $state(true);
 	let isSendingApplication = $state(false);
+	let isGeneratingCoverLetter = $state(false);
 	let error = $state('');
 	let successMessage = $state('');
 
@@ -30,6 +33,9 @@
 	let companyName = $state('');
 	let jobTitle = $state('');
 
+	// Get user from auth store
+	let user = $derived($authStore.user);
+
 	// Load profiles on mount
 	onMount(async () => {
 		await loadProfiles();
@@ -40,7 +46,13 @@
 			isLoadingProfiles = true;
 			error = '';
 			const response = await apiService.getProfiles();
-			profiles = response.data || [];
+			console.log('Profiles response:', response);
+
+			if (Array.isArray(response.data)) {
+				profiles = response.data;
+			} else {
+				profiles = [];
+			}
 		} catch (err) {
 			console.error('Failed to load profiles:', err);
 			error = `Failed to load profiles: ${err instanceof Error ? err.message : String(err)}`;
@@ -51,13 +63,47 @@
 
 	// Auto-generate application subject when profile or company changes
 	$effect(() => {
-		if (selectedProfileId && companyName && jobTitle) {
+		if (selectedProfileId && (companyName || jobEmail) && jobTitle) {
 			const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
-			if (selectedProfile) {
-				applicationSubject = `Application for ${jobTitle} position at ${companyName}`;
+			const company = companyName || (jobEmail ? jobEmail.split('@')[1].split('.')[0] : '');
+			if (selectedProfile && company) {
+				applicationSubject = `Application for ${jobTitle} position at ${company}`;
 			}
 		}
 	});
+
+	// Extract company and job info from job description or email
+	function extractJobInfo() {
+		if (!jobDescription.trim()) return;
+
+		// Simple extraction - you can make this more sophisticated
+		const description = jobDescription.toLowerCase();
+
+		// Try to extract job title (look for common patterns)
+		const titlePatterns = [
+			/job title:\s*([^\n]+)/,
+			/position:\s*([^\n]+)/,
+			/role:\s*([^\n]+)/,
+			/we are looking for a\s*([^\n]+)/,
+			/seeking a\s*([^\n]+)/
+		];
+
+		for (const pattern of titlePatterns) {
+			const match = description.match(pattern);
+			if (match && match[1]) {
+				jobTitle = match[1].trim();
+				break;
+			}
+		}
+
+		// Try to extract company name from email if not already set
+		if (!companyName && jobEmail) {
+			const emailDomain = jobEmail.split('@')[1];
+			if (emailDomain) {
+				companyName = emailDomain.split('.')[0];
+			}
+		}
+	}
 
 	// Generate cover letter based on job description and selected profile
 	function generateCoverLetter() {
@@ -66,35 +112,42 @@
 			return;
 		}
 
+		extractJobInfo();
+
 		const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
 		if (!selectedProfile) return;
 
+		isGeneratingCoverLetter = true;
+
 		// Extract company name from email if not provided
-		if (!companyName && jobEmail) {
-			const emailDomain = jobEmail.split('@')[1];
-			companyName = emailDomain.split('.')[0];
-		}
+		const company =
+			companyName || (jobEmail ? jobEmail.split('@')[1].split('.')[0] : 'your company');
+		const position = jobTitle || 'the position';
 
-		// Basic cover letter template
-		coverLetter = `Dear Hiring Manager,
+		// Generate a basic cover letter template
+		setTimeout(() => {
+			coverLetter = `Dear Hiring Manager,
 
-I am writing to express my interest in the ${jobTitle || 'position'} at ${companyName || 'your company'}.
-
-As a ${selectedProfile.title} with expertise in ${selectedProfile.skills.slice(0, 3).join(', ')}, I believe I would be a valuable addition to your team.
+I am writing to express my strong interest in the ${position} position at ${company}. With my background as a ${selectedProfile.title}, I am confident that my skills and experience make me an ideal candidate for this role.
 
 ${selectedProfile.summary}
 
-Based on the job description provided, I am confident that my skills in ${selectedProfile.skills.join(', ')} align well with your requirements.
+My technical expertise includes ${selectedProfile.skills.slice(0, 5).join(', ')}, which aligns perfectly with the requirements outlined in your job description. I am particularly drawn to this opportunity because it would allow me to leverage my experience while contributing to ${company}'s continued success.
 
-I have attached my CV for your review and would welcome the opportunity to discuss how I can contribute to your team.
+Key highlights of my qualifications:
+• Proven experience as a ${selectedProfile.title}
+• Strong proficiency in ${selectedProfile.skills.slice(0, 3).join(', ')}
+• Demonstrated ability to deliver high-quality results in fast-paced environments
 
-Thank you for considering my application.
+I would welcome the opportunity to discuss how my background and enthusiasm can contribute to your team. Thank you for your consideration, and I look forward to hearing from you.
 
 Best regards,
-[Your Name]`;
+${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`;
 
-		successMessage = 'Cover letter generated successfully! You can edit it before sending.';
-		setTimeout(() => (successMessage = ''), 3000);
+			successMessage = 'Cover letter generated successfully! You can edit it before sending.';
+			isGeneratingCoverLetter = false;
+			setTimeout(() => (successMessage = ''), 3000);
+		}, 1500); // Simulate AI generation time
 	}
 
 	async function handleSendApplication() {
@@ -162,6 +215,17 @@ Best regards,
 		jobTitle = '';
 		error = '';
 	}
+
+	// Clear messages after 5 seconds
+	$effect(() => {
+		if (error || successMessage) {
+			const timer = setTimeout(() => {
+				error = '';
+				successMessage = '';
+			}, 5000);
+			return () => clearTimeout(timer);
+		}
+	});
 </script>
 
 <section class="flex h-full w-full flex-col gap-8 overflow-hidden p-4">
@@ -209,6 +273,7 @@ Best regards,
 					</div>
 
 					<div class="space-y-4">
+						<!-- Job Description -->
 						<div>
 							<label for="job_description" class="mb-1 block text-sm font-medium text-gray-700">
 								Job Description <span class="text-[#ff4d00]">*</span>
@@ -218,12 +283,17 @@ Best regards,
 									name="job_description"
 									rows="3"
 									id="job_description"
-									placeholder="Paste the job description here, if any"
-									class="w-full resize-none rounded-md border border-gray-300 p-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+									bind:value={jobDescription}
+									onblur={extractJobInfo}
+									disabled={isSendingApplication}
+									placeholder="Paste the job description here..."
+									class="w-full resize-none rounded-md border border-gray-300 p-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 								></textarea>
 							</div>
 						</div>
+
 						<div class="grid gap-4 sm:grid-cols-2">
+							<!-- Job Email -->
 							<div>
 								<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
 									Job Contact Email <span class="text-[#ff4d00]">*</span>
@@ -235,12 +305,15 @@ Best regards,
 									<input
 										type="email"
 										id="email"
+										bind:value={jobEmail}
+										disabled={isSendingApplication}
 										placeholder="hr@company.com"
-										class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+										class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 									/>
 								</div>
 							</div>
 
+							<!-- Profile Selection -->
 							<div>
 								<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
 									Select Profile <span class="text-[#ff4d00]">*</span>
@@ -251,7 +324,9 @@ Best regards,
 									/>
 									<select
 										id="profile"
-										class="w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+										bind:value={selectedProfileId}
+										disabled={isSendingApplication}
+										class="w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										<option value="">Choose a profile</option>
 										{#each profiles as profile}
@@ -262,6 +337,40 @@ Best regards,
 							</div>
 						</div>
 
+						<!-- Additional fields -->
+						<div class="grid gap-4 sm:grid-cols-2">
+							<!-- Company Name -->
+							<div>
+								<label for="company" class="mb-1 block text-sm font-medium text-gray-700">
+									Company Name
+								</label>
+								<input
+									type="text"
+									id="company"
+									bind:value={companyName}
+									disabled={isSendingApplication}
+									placeholder="Company Name"
+									class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+								/>
+							</div>
+
+							<!-- Job Title -->
+							<div>
+								<label for="job_title" class="mb-1 block text-sm font-medium text-gray-700">
+									Job Title
+								</label>
+								<input
+									type="text"
+									id="job_title"
+									bind:value={jobTitle}
+									disabled={isSendingApplication}
+									placeholder="Software Engineer"
+									class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+								/>
+							</div>
+						</div>
+
+						<!-- Application Subject -->
 						<div>
 							<label for="application_subject" class="mb-1 block text-sm font-medium text-gray-700">
 								Application Subject <span class="text-[#ff4d00]">*</span>
@@ -271,18 +380,20 @@ Best regards,
 									class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
 								/>
 								<input
-									type="application_subject"
+									type="text"
 									id="application_subject"
-									placeholder="Application for [ Job Title ] position"
-									class="w-full {canEditSubject
+									bind:value={applicationSubject}
+									disabled={!canEditSubject || isSendingApplication}
+									placeholder="Application for [Job Title] position"
+									class="w-full {canEditSubject && !isSendingApplication
 										? 'cursor-text'
-										: 'cursor-not-allowed'} rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-									disabled={!canEditSubject}
+										: 'cursor-not-allowed'} rounded-md border border-gray-300 py-2 pr-10 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:opacity-50"
 								/>
 								<button
 									type="button"
 									onclick={() => (canEditSubject = !canEditSubject)}
-									class="absolute top-1/2 right-3 h-8 w-8 -translate-y-1/2 transform cursor-pointer"
+									disabled={isSendingApplication}
+									class="absolute top-1/2 right-3 h-8 w-8 -translate-y-1/2 transform cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
 								>
 									{#if canEditSubject}
 										<Check class="text-green-500" />
@@ -293,17 +404,28 @@ Best regards,
 							</div>
 						</div>
 
+						<!-- Generate Cover Letter Button -->
 						<button
-							class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-gray-100 py-4 text-gray-600 transition-colors hover:bg-gray-50"
+							onclick={generateCoverLetter}
+							disabled={isGeneratingCoverLetter || isSendingApplication}
+							class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-gray-50 py-4 text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
 						>
-							<FileText class="h-5 w-5" />
-							Generate Cover Letter
+							{#if isGeneratingCoverLetter}
+								<div
+									class="h-5 w-5 animate-spin rounded-full border-2 border-[#ff4d00] border-t-transparent"
+								></div>
+								Generating Cover Letter...
+							{:else}
+								<Wand2 class="h-5 w-5" />
+								Generate Cover Letter
+							{/if}
 						</button>
 
 						<Button
-							name="send application"
+							name={isSendingApplication ? 'Sending...' : 'Send Application'}
 							icon={Send}
-							classes="w-full justify-center hidden md:flex"
+							onClick={handleSendApplication}
+							classes={`w-full justify-center hidden md:flex ${isSendingApplication ? 'opacity-50 cursor-not-allowed' : ''}`}
 						/>
 					</div>
 				</div>
@@ -321,18 +443,33 @@ Best regards,
 					</div>
 				</div>
 
-				<div class="flex h-96 items-center justify-center rounded-md bg-gray-50 p-4">
-					<p class="text-center text-gray-500">
-						Your cover letter will appear here.
-						<br />
-						Click 'Generate Cover Letter' to create a template.
-					</p>
-				</div>
+				{#if coverLetter}
+					<div class="h-96 overflow-y-auto rounded-md border border-gray-200 p-4">
+						<textarea
+							bind:value={coverLetter}
+							disabled={isSendingApplication}
+							class="h-full w-full resize-none border-none p-0 focus:ring-0 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+							placeholder="Your cover letter will appear here..."
+						></textarea>
+					</div>
+				{:else}
+					<div class="flex h-96 items-center justify-center rounded-md bg-gray-50 p-4">
+						<div class="text-center">
+							<FileText class="mx-auto h-12 w-12 text-gray-400" />
+							<p class="mt-4 text-center text-gray-500">
+								Your cover letter will appear here.
+								<br />
+								Click 'Generate Cover Letter' to create a template.
+							</p>
+						</div>
+					</div>
+				{/if}
 
 				<Button
-					name="send application"
+					name={isSendingApplication ? 'Sending...' : 'Send Application'}
 					icon={Send}
-					classes="w-full justify-center md:hidden mt-6"
+					onClick={handleSendApplication}
+					classes={`w-full justify-center md:hidden mt-6 ${isSendingApplication ? 'opacity-50 cursor-not-allowed' : ''}`}
 				/>
 			</div>
 		</div>

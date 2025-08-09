@@ -5,6 +5,7 @@
 	import { modalStore } from '$lib/stores/modalStore';
 	import { Calendar, Download, Plus, Save, SquarePen, Trash2, UserRoundPlus } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { format } from 'date-fns';
 
 	let profiles = $state<any[]>([]);
 	let isLoadingProfile = $state(false);
@@ -144,7 +145,7 @@
 					<div class="mt-2 flex flex-col gap-2 rounded-md bg-gray-50 p-2">
 						<!-- header -->
 						<div class="flex items-center justify-between gap-8">
-							<h4 class="text-sm font-semibold">{profile.cv.filename}</h4>
+							<h4 class="text-sm font-semibold">{profile.cv.fileName}</h4>
 							<div class="flex items-center gap-4">
 								<Icon
 									icon={Download}
@@ -167,7 +168,7 @@
 									holderClasses="size-fit cursor-auto"
 									iconClasses="text-gray-500 size-3"
 								/>
-								<p class="text-xs">{profile.cv.date}</p>
+								<p class="text-xs">{format(new Date(profile.cv.uploadedAt), 'dd-MM-yyyy')}</p>
 							</div>
 							<div class="flex items-center gap-2 text-gray-500">
 								<Icon

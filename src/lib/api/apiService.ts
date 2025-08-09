@@ -9,25 +9,35 @@ export interface ProfileCreateRequest {
 }
 
 export interface ProfileResponse {
+	id: string;
+	title: string;
+	summary: string;
+	skills: string[];
+	cv?: {
+		id: string;
+		fileName: string;
+		url: string;
+		contentType: string;
+		size: number;
+		uploadedAt: string;
+	};
+	createdAt: string;
+	updatedAt?: string;
+}
+
+export interface User {
+	id: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+	createdAt: string;
+	updatedAt?: string;
+}
+
+export interface AuthResponse {
+	user: User;
+	token?: string;
 	message: string;
-	data: [
-		{
-			id: string;
-			title: string;
-			summary: string;
-			skills: string[];
-			cv?: {
-				id: string;
-				fileName: string;
-				url: string;
-				contentType: string;
-				size: number;
-				uploadedAt: string;
-			};
-			createdAt: string;
-		}
-	];
-	httpStatus: string;
 }
 
 export interface ApiResponse<T> {
@@ -38,23 +48,52 @@ export interface ApiResponse<T> {
 
 class ApiService {
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
-		const response = await fetch(`${API_BASE_URL}${url}`, {
-			credentials: 'include',
-			headers: {
-				'Content-Type': 'application/json',
-				...options.headers
-			},
-			...options
-		});
+		try {
+			const response = await fetch(`${API_BASE_URL}${url}`, {
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json',
+					...options.headers
+				},
+				...options
+			});
 
-		if (!response.ok) {
-			const error = await response.text();
-			throw new Error(`API Error: ${response.status} - ${error}`);
+			const contentType = response.headers.get('content-type');
+			let responseData;
+
+			if (contentType && contentType.includes('application/json')) {
+				responseData = await response.json();
+			} else {
+				responseData = await response.text();
+			}
+
+			if (!response.ok) {
+				// Handle authentication errors
+				if (response.status === 401) {
+					// Redirect to login if user is not authenticated
+					if (typeof window !== 'undefined') {
+						window.location.href = '/login';
+					}
+					throw new Error('Authentication required');
+				}
+
+				const errorMessage =
+					typeof responseData === 'object'
+						? responseData.message || `HTTP ${response.status}`
+						: responseData;
+				throw new Error(`API Error: ${response.status} - ${errorMessage}`);
+			}
+
+			return responseData;
+		} catch (error) {
+			if (error instanceof TypeError && error.message.includes('fetch')) {
+				throw new Error('Network error - please check your connection');
+			}
+			throw error;
 		}
-
-		return response.json();
 	}
 
+	// Profile Management
 	async createProfileWithCV(
 		title: string,
 		summary: string,
@@ -74,6 +113,12 @@ class ApiService {
 		});
 
 		if (!response.ok) {
+			if (response.status === 401) {
+				if (typeof window !== 'undefined') {
+					window.location.href = '/login';
+				}
+				throw new Error('Authentication required');
+			}
 			const error = await response.text();
 			throw new Error(`Profile Creation Error: ${response.status} - ${error}`);
 		}
@@ -81,7 +126,6 @@ class ApiService {
 		return response.json();
 	}
 
-	// Profile Management
 	async createProfile(profileData: ProfileCreateRequest): Promise<ApiResponse<ProfileResponse>> {
 		return this.makeRequest('/v1/profiles', {
 			method: 'POST',
@@ -91,6 +135,10 @@ class ApiService {
 
 	async getProfiles(): Promise<ApiResponse<ProfileResponse[]>> {
 		return this.makeRequest('/v1/profiles/me');
+	}
+
+	async getProfile(profileId: string): Promise<ApiResponse<ProfileResponse>> {
+		return this.makeRequest(`/v1/profiles/${profileId}`);
 	}
 
 	async updateProfile(
@@ -122,6 +170,12 @@ class ApiService {
 		});
 
 		if (!response.ok) {
+			if (response.status === 401) {
+				if (typeof window !== 'undefined') {
+					window.location.href = '/login';
+				}
+				throw new Error('Authentication required');
+			}
 			const error = await response.text();
 			throw new Error(`CV Upload Error: ${response.status} - ${error}`);
 		}
@@ -141,6 +195,12 @@ class ApiService {
 		});
 
 		if (!response.ok) {
+			if (response.status === 401) {
+				if (typeof window !== 'undefined') {
+					window.location.href = '/login';
+				}
+				throw new Error('Authentication required');
+			}
 			throw new Error(`Download Error: ${response.status}`);
 		}
 
@@ -174,7 +234,7 @@ class ApiService {
 	async updateUserProfile(userData: {
 		firstName?: string;
 		lastName?: string;
-	}): Promise<ApiResponse<any>> {
+	}): Promise<ApiResponse<User>> {
 		return this.makeRequest('/v1/users/me', {
 			method: 'PUT',
 			body: JSON.stringify(userData)
@@ -191,7 +251,7 @@ class ApiService {
 		email: string,
 		password: string,
 		rememberMe: boolean = false
-	): Promise<ApiResponse<any>> {
+	): Promise<ApiResponse<AuthResponse>> {
 		return this.makeRequest('/auth/login', {
 			method: 'POST',
 			body: JSON.stringify({ email, password, rememberMe })
@@ -203,7 +263,7 @@ class ApiService {
 		lastName: string;
 		email: string;
 		password: string;
-	}): Promise<ApiResponse<any>> {
+	}): Promise<ApiResponse<AuthResponse>> {
 		return this.makeRequest('/auth/register', {
 			method: 'POST',
 			body: JSON.stringify(userData)
@@ -214,6 +274,16 @@ class ApiService {
 		return this.makeRequest('/auth/logout', {
 			method: 'POST'
 		});
+	}
+
+	async checkAuth(): Promise<boolean> {
+		try {
+			await this.getCurrentUser();
+			return true;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		} catch (error) {
+			return false;
+		}
 	}
 }
 

@@ -12,6 +12,7 @@
 	import logo from '$lib/assets/logo.png';
 	import Button from '../ui/Button.svelte';
 	import { page } from '$app/stores';
+	import { authStore } from '$lib/stores/authStore';
 
 	const menuItems = [
 		{
@@ -35,6 +36,12 @@
 			id: '/settings'
 		}
 	];
+
+	let user = $derived($authStore.user);
+
+	async function handleLogout() {
+		await authStore.logout();
+	}
 </script>
 
 <section class="hidden w-[200px] flex-col justify-between bg-gray-50 p-4 md:flex">
@@ -75,20 +82,14 @@
 			</div>
 			<div class="min-w-0 flex-1">
 				<p class="truncate text-sm font-medium text-gray-900">
-					John Doe
-					<!-- {user?.firstName} -->
-					<!-- {user?.lastName} -->
+					{user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
 				</p>
 				<p class="truncate text-xs text-gray-500">
-					johndoe@gmail.com
-					<!-- {user?.email} -->
+					{user?.email || 'Loading...'}
 				</p>
 			</div>
 		</div>
 
-		<Button name="logout" classes="w-full" icon={LogOut} />
+		<Button name="logout" classes="w-full" icon={LogOut} onClick={handleLogout} />
 	</div>
 </section>
-
-<style lang="postcss">
-</style>

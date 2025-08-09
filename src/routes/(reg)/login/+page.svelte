@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { Mail, Lock, Eye, EyeOff } from '@lucide/svelte';
+	import { Mail, Lock, Eye, EyeOff, AlertCircle } from '@lucide/svelte';
 	import logo from '$lib/assets/logo.png';
-	import { apiService } from '$lib/api/apiService';
+	import { authStore } from '$lib/stores/authStore';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	let email = $state('');
 	let password = $state('');
 	let rememberMe = $state(false);
 	let showPassword = $state(false);
-	let isLoading = $state(false);
 	let error = $state('');
+
+	let authState = $derived($authStore);
 
 	function togglePasswordVisibility() {
 		showPassword = !showPassword;
@@ -22,20 +25,19 @@
 			return;
 		}
 
-		isLoading = true;
 		error = '';
 
 		try {
-			const response = await apiService.login(email.trim(), password.trim(), rememberMe);
-			console.log('Login successful:', response);
+			await authStore.login(email.trim(), password.trim(), rememberMe);
 
-			// Redirect to dashboard
-			window.location.href = '/app';
+			const redirectUrl = $page.url.searchParams.get('redirect') || '/app';
+			goto(redirectUrl);
 		} catch (err) {
 			console.error('Login failed:', err);
-			error = err instanceof Error ? err.message : 'Login failed. Please try again.';
-		} finally {
-			isLoading = false;
+			error =
+				err instanceof Error
+					? err.message.replace('API Error: 401 - ', '')
+					: 'Login failed. Please try again.';
 		}
 	}
 
@@ -44,6 +46,15 @@
 		// Redirect to backend OAuth endpoint
 		window.location.href = 'http://localhost:8080/api/oauth2/authorization/google';
 	}
+
+	$effect(() => {
+		if (error) {
+			const timer = setTimeout(() => {
+				error = '';
+			}, 5000);
+			return () => clearTimeout(timer);
+		}
+	});
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -59,6 +70,14 @@
 			<h2 class="text-3xl font-bold text-gray-900">Welcome back</h2>
 			<p class="mt-2 text-gray-600">Sign in to your account to continue your job search</p>
 		</div>
+
+		<!-- Error Alert -->
+		{#if error}
+			<div class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
+				<AlertCircle class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+				<p class="text-sm text-red-800">{error}</p>
+			</div>
+		{/if}
 
 		<!-- Form -->
 		<form class="mt-8 space-y-6" onsubmit={handleLogin}>
@@ -78,7 +97,7 @@
 							type="email"
 							required
 							bind:value={email}
-							disabled={isLoading}
+							disabled={authState.isLoading}
 							class="w-full rounded-lg border border-gray-300 py-3 pr-4 pl-10 outline-0 transition-colors focus:border-[#ff4d00] focus:ring-2 focus:ring-[#ff4d00]"
 							placeholder="Enter your email"
 						/>
@@ -100,13 +119,13 @@
 							type={showPassword ? 'text' : 'password'}
 							required
 							bind:value={password}
-							disabled={isLoading}
+							disabled={authState.isLoading}
 							class="w-full rounded-lg border border-gray-300 py-3 pr-12 pl-10 outline-0 transition-colors focus:border-[#ff4d00] focus:ring-2 focus:ring-[#ff4d00]"
 							placeholder="Enter your password"
 						/>
 						<button
 							type="button"
-							disabled={isLoading}
+							disabled={authState.isLoading}
 							onclick={(e) => togglePasswordVisibility()}
 							class="absolute top-1/2 right-3 -translate-y-1/2 transform text-gray-400 hover:text-gray-600"
 						>
@@ -127,7 +146,7 @@
 						id="remember-me"
 						name="remember-me"
 						type="checkbox"
-						disabled={isLoading}
+						disabled={authState.isLoading}
 						bind:checked={rememberMe}
 						class="h-4 w-4 rounded border-gray-300 text-[#ff4d00] focus:ring-[#ff4d00]"
 					/>
@@ -144,10 +163,10 @@
 			<!-- Submit button -->
 			<button
 				type="submit"
-				disabled={isLoading}
+				disabled={authState.isLoading}
 				class="group relative flex w-full justify-center rounded-lg border border-transparent bg-[#ff4d00] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#ff4d00]/90 focus:ring-2 focus:ring-[#ff4d00] focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				{#if isLoading}
+				{#if authState.isLoading}
 					<svg
 						class="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
 						xmlns="http://www.w3.org/2000/svg"
@@ -181,7 +200,7 @@
 			<button
 				type="button"
 				onclick={handleGoogleLogin}
-				disabled={isLoading}
+				disabled={authState.isLoading}
 				class="group relative flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#ff4d00] focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				<svg class="mr-3 h-5 w-5" viewBox="0 0 24 24">
