@@ -25,7 +25,7 @@ function createAuthStore() {
 			try {
 				update((state) => ({ ...state, isLoading: true }));
 				const response = await apiService.getCurrentUser();
-				const user = response.data;
+				const user = response.data.user || response.data;
 
 				set({
 					user,
@@ -40,52 +40,6 @@ function createAuthStore() {
 					isLoading: false,
 					isAuthenticated: false
 				});
-			}
-		},
-
-		// Login user
-		async login(email: string, password: string, rememberMe: boolean = false) {
-			try {
-				update((state) => ({ ...state, isLoading: true }));
-
-				const response = await apiService.login(email, password, rememberMe);
-				const user = response.data.user;
-
-				set({
-					user,
-					isLoading: false,
-					isAuthenticated: true
-				});
-
-				return { success: true, data: response };
-			} catch (error) {
-				set({
-					user: null,
-					isLoading: false,
-					isAuthenticated: false
-				});
-				throw error;
-			}
-		},
-
-		// Register user
-		async register(userData: {
-			firstName: string;
-			lastName: string;
-			email: string;
-			password: string;
-		}) {
-			try {
-				update((state) => ({ ...state, isLoading: true }));
-
-				const response = await apiService.register(userData);
-
-				update((state) => ({ ...state, isLoading: false }));
-
-				return { success: true, data: response };
-			} catch (error) {
-				update((state) => ({ ...state, isLoading: false }));
-				throw error;
 			}
 		},
 

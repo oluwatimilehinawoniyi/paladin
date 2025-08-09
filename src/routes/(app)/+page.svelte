@@ -274,15 +274,15 @@
 			</div>
 
 			<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
-				{#each features as feature, index}
+				{#each features as { icon: Icon, title, description, color }, index}
 					<div
 						class="group rounded-2xl border border-gray-200 p-8 transition-all hover:border-[#ff4d00]/30 hover:shadow-lg"
 					>
-						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg {feature.color}">
-							<svelte:component this={feature.icon} class="h-6 w-6" />
+						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg {color}">
+							<Icon class="h-6 w-6" />
 						</div>
-						<h3 class="mb-3 text-xl font-semibold text-gray-900">{feature.title}</h3>
-						<p class="text-gray-600">{feature.description}</p>
+						<h3 class="mb-3 text-xl font-semibold text-gray-900">{title}</h3>
+						<p class="text-gray-600">{description}</p>
 					</div>
 				{/each}
 			</div>
@@ -301,27 +301,27 @@
 			</div>
 
 			<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-				{#each steps as step, index}
+				{#each steps as { step, icon: Icon, title, description }, index}
 					<div class="relative text-center">
 						<!-- Step number -->
 						<div class="mb-6 flex justify-center">
 							<div
 								class="flex h-16 w-16 items-center justify-center rounded-full bg-[#ff4d00] text-2xl font-bold text-white"
 							>
-								{step.step}
+								{step}
 							</div>
 						</div>
 
 						<!-- Icon -->
 						<div class="mb-4 flex justify-center">
 							<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm">
-								<svelte:component this={step.icon} class="h-6 w-6 text-[#ff4d00]" />
+								<Icon class="h-6 w-6 text-[#ff4d00]" />
 							</div>
 						</div>
 
 						<!-- Content -->
-						<h3 class="mb-3 text-lg font-semibold text-gray-900">{step.title}</h3>
-						<p class="text-gray-600">{step.description}</p>
+						<h3 class="mb-3 text-lg font-semibold text-gray-900">{title}</h3>
+						<p class="text-gray-600">{description}</p>
 
 						<!-- Connector line (except for last item) -->
 						{#if index < steps.length - 1}

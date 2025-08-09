@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
+import type { LayoutLoad } from "./$types";
 
 const API_BASE_URL = 'http://localhost:8080/api';
 

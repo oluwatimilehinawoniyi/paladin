@@ -72,7 +72,7 @@ class ApiService {
 				if (response.status === 401) {
 					// Redirect to login if user is not authenticated
 					if (typeof window !== 'undefined') {
-						window.location.href = '/login';
+						window.location.href = '/auth/login';
 					}
 					throw new Error('Authentication required');
 				}
@@ -115,7 +115,7 @@ class ApiService {
 		if (!response.ok) {
 			if (response.status === 401) {
 				if (typeof window !== 'undefined') {
-					window.location.href = '/login';
+					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
 			}
@@ -172,7 +172,7 @@ class ApiService {
 		if (!response.ok) {
 			if (response.status === 401) {
 				if (typeof window !== 'undefined') {
-					window.location.href = '/login';
+					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
 			}
@@ -197,7 +197,7 @@ class ApiService {
 		if (!response.ok) {
 			if (response.status === 401) {
 				if (typeof window !== 'undefined') {
-					window.location.href = '/login';
+					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
 			}
@@ -228,7 +228,7 @@ class ApiService {
 
 	// Auth & user mgmt
 	async getCurrentUser(): Promise<ApiResponse<any>> {
-		return this.makeRequest('/v1/users/me');
+		return this.makeRequest('/auth/me');
 	}
 
 	async updateUserProfile(userData: {
@@ -244,29 +244,6 @@ class ApiService {
 	async deleteAccount(): Promise<ApiResponse<any>> {
 		return this.makeRequest('/v1/users/me', {
 			method: 'DELETE'
-		});
-	}
-
-	async login(
-		email: string,
-		password: string,
-		rememberMe: boolean = false
-	): Promise<ApiResponse<AuthResponse>> {
-		return this.makeRequest('/auth/login', {
-			method: 'POST',
-			body: JSON.stringify({ email, password, rememberMe })
-		});
-	}
-
-	async register(userData: {
-		firstName: string;
-		lastName: string;
-		email: string;
-		password: string;
-	}): Promise<ApiResponse<AuthResponse>> {
-		return this.makeRequest('/auth/register', {
-			method: 'POST',
-			body: JSON.stringify(userData)
 		});
 	}
 
