@@ -8,7 +8,7 @@
 	</a>
 
 	<a
-		href="/login"
+		href="/auth/login"
 		class="flex h-8 items-center justify-center rounded-md bg-white px-2.5 font-semibold text-[#ff4d00] capitalize"
 		>get started</a
 	>

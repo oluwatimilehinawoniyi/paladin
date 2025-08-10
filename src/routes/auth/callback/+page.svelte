@@ -36,7 +36,7 @@
 				
 				// Redirect to login after a short delay
 				setTimeout(() => {
-					goto('/login?error=oauth_failed');
+					goto('/auth/login?error=oauth_failed');
 				}, 3000);
 			}
 		} catch (error) {
@@ -45,7 +45,7 @@
 			message = 'An error occurred during authentication.';
 			
 			setTimeout(() => {
-				goto('/login?error=oauth_failed');
+				goto('/auth/login?error=oauth_failed');
 			}, 3000);
 		}
 	});

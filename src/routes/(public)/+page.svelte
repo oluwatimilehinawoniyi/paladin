@@ -456,14 +456,7 @@
 				</p>
 				<div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
 					<a
-						href="/register"
-						class="inline-flex items-center justify-center rounded-lg bg-white px-8 py-4 text-lg font-semibold text-[#ff4d00] transition-colors hover:bg-gray-100"
-					>
-						Start Free Today
-						<ArrowRight class="ml-2 h-5 w-5" />
-					</a>
-					<a
-						href="/login"
+						href="/auth/login"
 						class="inline-flex items-center justify-center rounded-lg border-2 border-white px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10"
 					>
 						Sign In

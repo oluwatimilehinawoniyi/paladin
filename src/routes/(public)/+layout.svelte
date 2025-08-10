@@ -1,8 +1,9 @@
 <script lang="ts">
+	let { children } = $props();
 </script>
 
 <main>
 	<section class="container mx-auto">
-		<slot />
+		{@render children?.()}
 	</section>
 </main>

@@ -1,4 +1,3 @@
-// src/routes/(dashboard)/app/+layout.ts
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
@@ -11,25 +10,32 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 	}
 
 	try {
+		console.log('🛡️ Checking auth for dashboard...');
+
 		// Check if user is authenticated
 		const response = await fetch(`${API_BASE_URL}/auth/me`, {
 			credentials: 'include'
 		});
 
 		if (!response.ok) {
-			throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname)}`);
+			console.log('❌ User not authenticated for dashboard, redirecting to login');
+			throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 		}
 
 		const data = await response.json();
+		console.log('✅ User authenticated for dashboard:', data.data?.user?.email);
 
 		return {
-			user: data.user
+			user: data.data?.user || data.user
 		};
 	} catch (error) {
+		console.log('🛡️ Dashboard auth check error:', error);
+
 		if (error instanceof Response && error.status === 302) {
 			throw error;
 		}
 
-		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname)}`);
+		console.log('❌ Dashboard auth failed, redirecting to login');
+		throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 	}
 };

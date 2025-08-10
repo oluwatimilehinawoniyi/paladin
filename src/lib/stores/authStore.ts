@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/lib/stores/authStore.ts
 import { writable } from 'svelte/store';
 import { apiService, type User } from '$lib/api/apiService';
 import { browser } from '$app/environment';
@@ -6,13 +9,15 @@ interface AuthState {
 	user: User | null;
 	isLoading: boolean;
 	isAuthenticated: boolean;
+	isInitialized: boolean;
 }
 
 function createAuthStore() {
 	const { subscribe, set, update } = writable<AuthState>({
 		user: null,
-		isLoading: true,
-		isAuthenticated: false
+		isLoading: false,
+		isAuthenticated: false,
+		isInitialized: false
 	});
 
 	return {
@@ -22,23 +27,34 @@ function createAuthStore() {
 		async init() {
 			if (!browser) return;
 
+			// Don't initialize multiple times
+			const currentState = get(authStore);
+			if (currentState.isInitialized) {
+				console.log('🔧 Auth store already initialized, skipping');
+				return;
+			}
+
 			try {
+				console.log('🔧 Initializing auth store...');
 				update((state) => ({ ...state, isLoading: true }));
+
 				const response = await apiService.getCurrentUser();
 				const user = response.data.user || response.data;
 
+				console.log('✅ Auth store initialized with user:', user.email);
 				set({
 					user,
 					isLoading: false,
-					isAuthenticated: true
+					isAuthenticated: true,
+					isInitialized: true
 				});
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
-				console.log('User not authenticated');
+				console.log('❌ Auth store init failed (user not authenticated)');
 				set({
 					user: null,
 					isLoading: false,
-					isAuthenticated: false
+					isAuthenticated: false,
+					isInitialized: true
 				});
 			}
 		},
@@ -53,11 +69,12 @@ function createAuthStore() {
 				set({
 					user: null,
 					isLoading: false,
-					isAuthenticated: false
+					isAuthenticated: false,
+					isInitialized: true
 				});
 
 				if (browser) {
-					window.location.href = '/login';
+					window.location.href = '/auth/login';
 				}
 			}
 		},
@@ -79,10 +96,18 @@ function createAuthStore() {
 			set({
 				user: null,
 				isLoading: false,
-				isAuthenticated: false
+				isAuthenticated: false,
+				isInitialized: false
 			});
 		}
 	};
 }
 
 export const authStore = createAuthStore();
+
+// Helper function to get current state
+function get(store: any) {
+	let value: any;
+	store.subscribe((val: any) => (value = val))();
+	return value;
+}
