@@ -80,6 +80,14 @@
 			options: { size: 'lg' }
 		});
 	}
+	function formatFileSize(bytes: number): string {
+		if (bytes === 0) return '0 B';
+		const k = 1024;
+		const sizes = ['B', 'KB', 'MB', 'GB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+	}
 </script>
 
 <section class="flex w-full flex-col gap-8 overflow-hidden p-4 md:h-screen md:pt-14">
@@ -176,7 +184,7 @@
 									holderClasses="size-fit cursor-auto"
 									iconClasses="text-gray-500 size-3"
 								/>
-								<p class="text-xs">{profile.cv.size}</p>
+								<p class="text-xs">{formatFileSize(profile.cv.size)}</p>
 							</div>
 						</div>
 					</div>
