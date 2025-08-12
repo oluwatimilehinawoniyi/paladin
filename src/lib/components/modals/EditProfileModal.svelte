@@ -9,12 +9,9 @@
 	let skills = $state('');
 	let cvFile: File | null = $state(null);
 
-	
-
 	$effect(() => {
 		if (profileId) {
 			// Load existing profile data
-			
 			console.log('Loading profile:', profileId);
 			// You would fetch the actual data here
 			title = 'Frontend Developer';
