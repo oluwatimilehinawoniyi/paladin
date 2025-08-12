@@ -4,10 +4,12 @@ import { browser } from '$app/environment';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
-export const load: LayoutLoad = async ({ fetch, url }) => {
+export const load: LayoutLoad = async ({ fetch, url, depends }) => {
 	if (!browser) {
 		return {};
 	}
+
+	depends('app:user');
 
 	try {
 		console.log('🛡️ Checking auth for dashboard...');
@@ -18,7 +20,6 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 		});
 
 		if (!response.ok) {
-			console.log('❌ User not authenticated for dashboard, redirecting to login');
 			throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 		}
 
@@ -26,16 +27,18 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 		console.log('✅ User authenticated for dashboard:', data.data?.user?.email);
 
 		return {
-			user: data.data?.user || data.user
+			user: data.data?.user || data.user,
+			streamed: {
+				// notifications: fetch('/api/v1/notifications/unread').then((r) =>
+				// r.ok ? r.json() : { count: 0 }
+				// )
+			}
 		};
 	} catch (error) {
-		console.log('🛡️ Dashboard auth check error:', error);
-
 		if (error instanceof Response && error.status === 302) {
 			throw error;
 		}
 
-		console.log('❌ Dashboard auth failed, redirecting to login');
 		throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 	}
 };
