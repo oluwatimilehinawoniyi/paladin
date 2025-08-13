@@ -61,7 +61,9 @@ class ApiService {
 			const contentType = response.headers.get('content-type');
 			let responseData;
 
-			if (contentType && contentType.includes('application/json')) {
+			if (response.status === 204) {
+				responseData = { message: 'Success', data: null };
+			} else if (contentType && contentType.includes('application/json')) {
 				responseData = await response.json();
 			} else {
 				responseData = await response.text();
@@ -257,7 +259,7 @@ class ApiService {
 		try {
 			await this.getCurrentUser();
 			return true;
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			return false;
 		}

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/lib/stores/authStore.ts
 import { writable } from 'svelte/store';
 import { apiService, type User } from '$lib/api/apiService';
 import { browser } from '$app/environment';
@@ -22,6 +21,17 @@ function createAuthStore() {
 
 	return {
 		subscribe,
+
+		// Set user data directly (used by layout)
+		setUser(user: User) {
+			console.log('🔧 Setting user in auth store:', user.email);
+			set({
+				user,
+				isLoading: false,
+				isAuthenticated: true,
+				isInitialized: true
+			});
+		},
 
 		// Initialize auth state on app load
 		async init() {

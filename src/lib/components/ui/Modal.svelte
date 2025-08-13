@@ -118,7 +118,7 @@
 		</button>
 
 		<!-- Dynamic Component -->
-		<div class="p-6">
+		<div class="p-2">
 			{#if !isLoading && Component}
 				<Component
 					{...componentProps}
