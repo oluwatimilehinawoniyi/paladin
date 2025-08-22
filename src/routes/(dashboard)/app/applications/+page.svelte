@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import { modalStore } from '$lib/stores/modalStore';
-import { triggerSuccessConfetti } from '$lib/utils/confetti';
+	import { triggerSuccessConfetti } from '$lib/utils/confetti';
 	import {
 		Send,
 		UserPlus,
@@ -22,8 +22,10 @@ import { triggerSuccessConfetti } from '$lib/utils/confetti';
 		Sparkles
 	} from '@lucide/svelte';
 	import { apiService, type ProfileResponse } from '$lib/api/apiService';
+	import { jobAnalysisStore } from '$lib/stores/jobAnalysisStore';
 	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
+	import { formatCoverLetter } from '$lib/utils/textFormatting';
 
 	// State
 	let profiles: ProfileResponse[] = $state([]);
@@ -43,21 +45,12 @@ import { triggerSuccessConfetti } from '$lib/utils/confetti';
 	let jobEmail = $state('');
 	let selectedProfileId = $state('');
 	let applicationSubject = $state('');
-	let coverLetter = $state('');
+	let coverLetter = $state<string>('');
 	let companyName = $state('');
 	let jobTitle = $state('');
 
 	// AI extracted data
-	let extractedData = $state({
-		company: '',
-		position: '',
-		email: '',
-		requirements: [] as string[],
-		keySkills: [] as string[],
-		experienceLevel: '',
-		location: '',
-		generatedCoverLetter: ''
-	});
+	let jobDetails = $derived($jobAnalysisStore.jobAnalysis);
 
 	// Get user from auth store
 	let user = $derived($authStore.user);
@@ -99,7 +92,7 @@ import { triggerSuccessConfetti } from '$lib/utils/confetti';
 	// AI-powered JD Analysis
 	async function analyzeJobDescription() {
 		if (!jobDescription.trim()) {
-			error = 'Please provide a job description first.';
+			error = 'Please provide a job description.';
 			return;
 		}
 
@@ -112,26 +105,18 @@ import { triggerSuccessConfetti } from '$lib/utils/confetti';
 		error = '';
 
 		try {
-			// TODO: Replace with actual API call
-			// const response = await apiService.analyzeJD({
-			//   jobDescription,
-			//   profileId: selectedProfileId
-			// });
+			const result = await jobAnalysisStore.analyzeJobDescription(
+				selectedProfileId,
+				jobDescription
+			);
 
-			// Simulate AI analysis WITH cover letter generation
-			await simulateAIAnalysisWithCoverLetter();
+			if (result) {
+				jdAnalyzed = true;
 
-			jdAnalyzed = true;
-			successMessage = 'Job description analyzed and cover letter prepared!';
-
-			// Auto-populate fields with extracted data
-			companyName = extractedData.company;
-			jobTitle = extractedData.position;
-			jobEmail = extractedData.email;
-
-			// Generate subject line
-			if (extractedData.company && extractedData.position) {
-				applicationSubject = `Application for ${extractedData.position} position at ${extractedData.company}`;
+				companyName = result.jobDetails.company;
+				jobTitle = result.jobDetails.position;
+				jobEmail = result.jobDetails.email;
+				applicationSubject = `Application for ${result.jobDetails.position} position at ${result.jobDetails.company}`;
 			}
 		} catch (err) {
 			console.error('Failed to analyze job description:', err);
@@ -141,90 +126,16 @@ import { triggerSuccessConfetti } from '$lib/utils/confetti';
 		}
 	}
 
-	// Simulate AI analysis WITH cover letter generation (replace with real API call)
-	async function simulateAIAnalysisWithCoverLetter() {
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				// Extract basic info from job description
-				const jd = jobDescription.toLowerCase();
-
-				// Simple extraction patterns (replace with actual AI)
-				const companyMatches = jd.match(
-					/(?:company|organization|at)\s+([a-z\s]+?)(?:\s|\.|\,|is|has)/
-				);
-				const positionMatches = jd.match(
-					/(?:role|position|job title|seeking a|looking for a)\s*:?\s*([^\n\.]+)/
-				);
-				const emailMatches = jobDescription.match(/[\w\.-]+@[\w\.-]+\.\w+/);
-
-				const company = companyMatches?.[1]?.trim() || 'TechCorp Inc';
-				const position = positionMatches?.[1]?.trim() || 'Software Developer';
-				const email = emailMatches?.[0] || 'careers@techcorp.com';
-
-				extractedData = {
-					company,
-					position,
-					email,
-					requirements: [
-						'React/Vue/Angular experience',
-						'JavaScript proficiency',
-						'RESTful API knowledge',
-						'Team collaboration skills'
-					],
-					keySkills: ['JavaScript', 'React', 'Node.js', 'TypeScript'],
-					experienceLevel: '3-5 years',
-					location: 'Remote/Hybrid',
-					// AI-generated cover letter (pre-made during analysis)
-					generatedCoverLetter: generateSmartCoverLetter(company, position)
-				};
-
-				resolve(extractedData);
-			}, 2500); // Slightly longer since we're doing more work
-		});
-	}
-
-	// Generate smart cover letter based on JD analysis
-	function generateSmartCoverLetter(company: string, position: string): string {
-		const profile = selectedProfile;
-		if (!profile) return '';
-
-		return `Dear Hiring Manager,
-
-I am excited to apply for the ${position} position at ${company}. After carefully reviewing your job description, I am confident that my background as a ${profile.title} and expertise in ${profile.skills.slice(0, 3).join(', ')} make me an ideal candidate for this role.
-
-${profile.summary}
-
-What particularly caught my attention about this opportunity is how well it aligns with my technical expertise. Your requirements for ${extractedData.keySkills.slice(0, 2).join(' and ')} match perfectly with my ${extractedData.experienceLevel} of hands-on experience in these technologies.
-
-Key qualifications that make me stand out:
-• Proven track record as a ${profile.title}
-• Strong proficiency in ${profile.skills.slice(0, 4).join(', ')}
-• Experience with ${extractedData.requirements.slice(0, 2).join(' and ')}
-• Demonstrated ability to deliver high-quality results in collaborative environments
-
-I am particularly drawn to ${company} because of your innovative approach and commitment to excellence. I would love to contribute to your team's continued success and help drive your mission forward.
-
-I would welcome the opportunity to discuss how my background and enthusiasm can benefit your organization. Thank you for your consideration.
-
-Best regards,
-${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`;
-	}
-
 	// Generate cover letter (instant for Smart Mode, template-based for Manual Mode)
 	async function generateCoverLetter() {
-		if (!selectedProfileId) {
-			error = 'Please select a profile first.';
-			return;
-		}
-
 		isGeneratingCoverLetter = true;
 		error = '';
 
 		try {
-			if (isSmartMode && jdAnalyzed && extractedData.generatedCoverLetter) {
+			if (isSmartMode && jdAnalyzed && jobDetails?.coverLetter) {
 				// Smart Mode: Show pre-generated cover letter instantly!
 				setTimeout(() => {
-					coverLetter = extractedData.generatedCoverLetter;
+					coverLetter = formatCoverLetter(jobDetails?.coverLetter);
 					successMessage = 'AI-generated cover letter ready!';
 					isGeneratingCoverLetter = false;
 				}, 300); // Just a tiny delay for UX feedback
@@ -309,7 +220,7 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 				coverLetter = randomTemplate;
 				isGeneratingCoverLetter = false;
 				resolve(randomTemplate);
-			}, 800); // Short delay for template lookup simulation
+			}, 800);
 		});
 	}
 
@@ -330,34 +241,33 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 			};
 
 			const response = await apiService.sendJobApplication(applicationData);
-			// console.log('Application sent successfully:', response);
 
-					triggerSuccessConfetti();
+			triggerSuccessConfetti();
 
-setTimeout(() => {
-			modalStore.open({
-				component: () => import('$lib/components/modals/ApplicationSuccessModal.svelte') as any,
-				props: {
-					applicationData: {
-						company: companyName || jobEmail.split('@')[1]?.split('.')[0] || 'Company',
-						position: jobTitle || 'Position',
-						recipientEmail: jobEmail,
-						profileUsed: selectedProfile?.title || 'Unknown Profile',
-						applicationId: response.data?.id || undefined,
-						sentAt: new Date().toISOString()
+			setTimeout(() => {
+				modalStore.open({
+					component: () => import('$lib/components/modals/ApplicationSuccessModal.svelte') as any,
+					props: {
+						applicationData: {
+							company: companyName || jobEmail.split('@')[1]?.split('.')[0] || 'Company',
+							position: jobTitle || 'Position',
+							recipientEmail: jobEmail,
+							profileUsed: selectedProfile?.title || 'Unknown Profile',
+							applicationId: response.data?.id || undefined,
+							sentAt: new Date().toISOString()
+						}
+					},
+					options: {
+						size: 'lg',
+						closeOnBackdrop: false, // Force user to interact with success
+						closeOnEscape: false
 					}
-				},
-				options: { 
-					size: 'lg',
-					closeOnBackdrop: false, // Force user to interact with success
-					closeOnEscape: false
-				}
-			});
-		}, 500);
+				});
+			}, 500);
 
-setTimeout(() => {
-			resetForm();
-		}, 1000);
+			setTimeout(() => {
+				resetForm();
+			}, 1000);
 
 			successMessage = 'Application sent successfully!';
 		} catch (err) {
@@ -403,16 +313,9 @@ setTimeout(() => {
 		error = '';
 		successMessage = '';
 		jdAnalyzed = false;
-		extractedData = {
-			company: '',
-			position: '',
-			email: '',
-			requirements: [],
-			keySkills: [],
-			experienceLevel: '',
-			location: '',
-			generatedCoverLetter: ''
-		};
+
+		// Reset the store data
+		jobAnalysisStore.reset();
 	}
 
 	// Clear messages after 5 seconds
@@ -519,6 +422,29 @@ setTimeout(() => {
 				<!-- Left Side - Application Form -->
 				<div class="space-y-6 overflow-y-auto">
 					<div class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
+						<!-- Profile Selection -->
+						<div>
+							<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
+								Select Profile <span class="text-[#ff4d00]">*</span>
+							</label>
+							<select
+								id="profile"
+								bind:value={selectedProfileId}
+								disabled={isSendingApplication || (isSmartMode && jdAnalyzed)}
+								class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								<option value="">Choose a profile</option>
+								{#each profiles as profile}
+									<option value={profile.id}>{profile.title}</option>
+								{/each}
+							</select>
+							{#if isSmartMode && !jdAnalyzed}
+								<p class="mt-1 text-xs text-gray-500">
+									Select profile before analyzing job description
+								</p>
+							{/if}
+						</div>
+
 						<!-- Smart Mode: Job Description Analysis -->
 						{#if isSmartMode}
 							<div class="space-y-4">
@@ -545,7 +471,7 @@ setTimeout(() => {
 										id="job_description"
 										bind:value={jobDescription}
 										disabled={isAnalyzingJD || jdAnalyzed}
-										placeholder="Paste the complete job description here..."
+										placeholder="Paste the job description here..."
 										rows="6"
 										class="w-full resize-none rounded-md border border-gray-300 p-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 									></textarea>
@@ -571,19 +497,21 @@ setTimeout(() => {
 										<div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 											<div>
 												<span class="font-medium text-gray-700">Company:</span>
-												<span class="ml-1 text-gray-600">{extractedData.company}</span>
+												<span class="ml-1 text-gray-600">{jobDetails?.jobDetails.company}</span>
 											</div>
 											<div>
 												<span class="font-medium text-gray-700">Position:</span>
-												<span class="ml-1 text-gray-600">{extractedData.position}</span>
+												<span class="ml-1 text-gray-600">{jobDetails?.jobDetails.position}</span>
 											</div>
 											<div>
 												<span class="font-medium text-gray-700">Email:</span>
-												<span class="ml-1 text-gray-600">{extractedData.email}</span>
+												<span class="ml-1 text-gray-600">{jobDetails?.jobDetails.email}</span>
 											</div>
 											<div>
 												<span class="font-medium text-gray-700">Experience:</span>
-												<span class="ml-1 text-gray-600">{extractedData.experienceLevel}</span>
+												<span class="ml-1 text-gray-600"
+													>{jobDetails?.jobDetails.experienceLevel}</span
+												>
 											</div>
 										</div>
 
@@ -615,7 +543,7 @@ setTimeout(() => {
 								</div>
 
 								<!-- Profile Selection -->
-								<div>
+								<!-- <div>
 									<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
 										Select Profile <span class="text-[#ff4d00]">*</span>
 									</label>
@@ -635,7 +563,7 @@ setTimeout(() => {
 											Select profile before analyzing job description
 										</p>
 									{/if}
-								</div>
+								</div> -->
 
 								<!-- Company and Job Details -->
 								<div class="grid gap-4 sm:grid-cols-2">

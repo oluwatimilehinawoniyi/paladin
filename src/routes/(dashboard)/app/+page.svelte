@@ -25,6 +25,7 @@
 	let profiles = $derived($profilesStore.profiles);
 	let isLoading = $derived($profilesStore.isLoading);
 	let error = $derived($profilesStore.error);
+
 	// Edit state for each profile
 	let editingProfiles = $state<
 		Record<
@@ -94,7 +95,7 @@
 				skills
 			});
 
-			// Success - remove from editing state
+			// success - remove from editing state
 			delete editingProfiles[profileId];
 			editingProfiles = { ...editingProfiles };
 		} catch (error) {

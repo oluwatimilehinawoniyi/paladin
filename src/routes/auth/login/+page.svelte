@@ -11,7 +11,7 @@
 
 	onMount(async () => {
 		console.log('🚀 Login page mounted');
-		
+
 		// Check for OAuth error
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('error') === 'oauth_failed') {
@@ -45,7 +45,7 @@
 
 	function handleGoogleLogin() {
 		if (isLoading) return;
-		
+
 		isLoading = true;
 		error = '';
 
@@ -98,7 +98,9 @@
 {#if isCheckingAuth}
 	<div class="flex min-h-screen items-center justify-center bg-gray-50">
 		<div class="text-center">
-			<div class="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-[#ff4d00] border-t-transparent"></div>
+			<div
+				class="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-[#ff4d00] border-t-transparent"
+			></div>
 			<p class="mt-4 text-gray-600">Checking authentication...</p>
 		</div>
 	</div>
@@ -143,7 +145,7 @@
 					<button
 						onclick={handleGoogleLogin}
 						disabled={isLoading}
-						class="group relative flex w-full justify-center rounded-lg border-2 border-gray-300 bg-white px-4 py-4 text-lg font-medium text-gray-700 transition-all hover:border-[#ff4d00] hover:bg-gray-50 focus:ring-2 focus:ring-[#ff4d00] focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="group relative flex w-full items-center justify-center rounded-lg border-2 border-gray-300 bg-white px-4 py-4 text-lg font-medium text-gray-700 transition-all hover:border-[#ff4d00] hover:bg-gray-50 focus:ring-2 focus:ring-[#ff4d00] focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{#if isLoading}
 							<svg
@@ -194,7 +196,9 @@
 
 				<!-- Security Note -->
 				<div class="mt-6 text-center">
-					<p class="text-sm text-gray-500">🔒 Secure OAuth2 authentication - no passwords required</p>
+					<p class="text-sm text-gray-500">
+						🔒 Secure OAuth2 authentication - no passwords required
+					</p>
 				</div>
 
 				<!-- Back to home link -->

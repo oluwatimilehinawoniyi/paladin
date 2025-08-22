@@ -1,4 +1,3 @@
-// src/lib/stores/profilesStore.ts
 import { writable } from 'svelte/store';
 import { apiService, type ProfileResponse } from '$lib/api/apiService';
 

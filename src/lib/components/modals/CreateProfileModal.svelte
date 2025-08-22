@@ -200,7 +200,7 @@
 
 			<!-- CV Upload -->
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Upload CV (Optional) </label>
+				<label for="cv-upload" class="mb-1 block text-sm font-medium text-gray-700"> Upload CV (Optional) </label>
 
 				{#if cvFile}
 					<!-- File Preview -->
@@ -239,6 +239,7 @@
 
 						<!-- Hidden file input -->
 						<input
+							id="cv-upload"
 							type="file"
 							bind:this={fileInput}
 							onchange={handleFileSelect}

@@ -46,6 +46,34 @@ export interface ApiResponse<T> {
 	data: T;
 }
 
+export interface JobAnalysisRequest {
+	profileId: string;
+	jobDescription: string;
+}
+
+export interface JobAnalysisResponse {
+	jobDetails: {
+		company: string;
+		position: string;
+		email: string;
+		requirements: string[];
+		keySkills: string[];
+		experienceLevel: string;
+		location?: string;
+		salary?: string;
+	};
+	coverLetter: string;
+	matchAnalysis: {
+		overallMatchPercentage: number;
+		matchingSkills: string[];
+		missingSkills: string[];
+		strengths: string[];
+		weaknesses: string[];
+		recommendation: string;
+		confidenceLevel: 'High' | 'Medium' | 'Low';
+	};
+}
+
 class ApiService {
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
 		try {
@@ -93,6 +121,14 @@ class ApiService {
 			}
 			throw error;
 		}
+	}
+
+	// job description analysis
+	async analyseJobDescription(data: JobAnalysisRequest): Promise<ApiResponse<JobAnalysisResponse>> {
+		return this.makeRequest(`/v1/job-applications/analyze-application`, {
+			method: 'POST',
+			body: JSON.stringify(data)
+		});
 	}
 
 	// Profile Management
