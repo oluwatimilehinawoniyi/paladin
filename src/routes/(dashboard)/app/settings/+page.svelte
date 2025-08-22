@@ -1,18 +1,10 @@
 <script lang="ts">
 	import {
 		User,
-		Bell,
 		Settings as SettingsIcon,
 		Shield,
-		Download,
 		Trash2,
-		Sun,
-		Moon,
 		Save,
-		Cookie,
-		KeyRound,
-		Eye,
-		EyeOff,
 		AlertCircle
 	} from '@lucide/svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -24,7 +16,6 @@
 	let firstName = $state('');
 	let lastName = $state('');
 	let email = $state('');
-	let bio = $state('');
 
 	// Loading states
 	let isLoadingProfile = $state(false);
@@ -34,28 +25,6 @@
 	// Messages
 	let successMessage = $state('');
 	let errorMessage = $state('');
-
-	// Notification preferences state
-	let emailNotifications = $state(true);
-	let applicationUpdates = $state(true);
-	let weeklyReports = $state(false);
-	let marketingEmails = $state(false);
-
-	// Application preferences state
-	let autoSaveApplications = $state(true);
-	let defaultCoverLetter = $state(true);
-	let profileReminders = $state(true);
-
-	// Change password state
-	let oldPassword = $state('');
-	let newPassword = $state('');
-	let confirmNewPassword = $state('');
-	let isOldPasswordOpen = $state(false);
-	let isNewPasswordOpen = $state(false);
-	let isConfirmNewPasswordOpen = $state(false);
-
-	// Theme state
-	let isDarkMode = $state(false);
 
 	// Load user data on mount
 	onMount(async () => {
@@ -71,7 +40,6 @@
 			firstName = user.firstName || '';
 			lastName = user.lastName || '';
 			email = user.email || '';
-			bio = user.bio || '';
 		} catch (error) {
 			console.error('Failed to load user profile:', error);
 			errorMessage = 'Failed to load user profile';
@@ -101,25 +69,6 @@
 		}
 	}
 
-	function handleSaveNotifications() {
-		console.log('Saving notifications:', {
-			emailNotifications,
-			applicationUpdates,
-			weeklyReports,
-			marketingEmails
-		});
-		// Add your notification save logic here
-		successMessage = 'Notification preferences saved!';
-		setTimeout(() => (successMessage = ''), 3000);
-	}
-
-	function handleExportData() {
-		console.log('Exporting user data...');
-		// Add your data export logic here
-		successMessage = 'Data export initiated. You will receive an email with your data.';
-		setTimeout(() => (successMessage = ''), 3000);
-	}
-
 	async function handleDeleteAccount() {
 		modalStore.open({
 			component: () => import('$lib/components/modals/ConfirmationModal.svelte'),
@@ -144,14 +93,6 @@
 			},
 			options: { size: 'md' }
 		});
-	}
-
-	function toggleTheme() {
-		isDarkMode = !isDarkMode;
-		console.log('Theme changed to:', isDarkMode ? 'dark' : 'light');
-		// Add your theme toggle logic here
-		successMessage = `Switched to ${isDarkMode ? 'dark' : 'light'} mode!`;
-		setTimeout(() => (successMessage = ''), 3000);
 	}
 
 	// Clear messages after 5 seconds
@@ -261,77 +202,6 @@
 			{/if}
 		</div>
 
-		<!-- Notification Preferences Section -->
-		<div class="rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
-				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff4d00]/10">
-					<Bell class="h-5 w-5 text-[#ff4d00]" />
-				</div>
-				<div>
-					<h2 class="text-xl font-semibold text-gray-800">Notification Preferences</h2>
-					<p class="text-gray-600">Choose what notifications you'd like to receive</p>
-				</div>
-			</div>
-
-			<div class="space-y-4">
-				<div class="flex items-center justify-between">
-					<div>
-						<h3 class="font-medium text-gray-800">Email Notifications</h3>
-						<p class="text-sm text-gray-600">Receive notifications via email</p>
-					</div>
-					<label class="relative inline-flex cursor-pointer items-center">
-						<input type="checkbox" bind:checked={emailNotifications} class="peer sr-only" />
-						<div
-							class="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#ff4d00] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
-						></div>
-					</label>
-				</div>
-
-				<div class="flex items-center justify-between">
-					<div>
-						<h3 class="font-medium text-gray-800">Application Updates</h3>
-						<p class="text-sm text-gray-600">Get notified when application status changes</p>
-					</div>
-					<label class="relative inline-flex cursor-pointer items-center">
-						<input type="checkbox" bind:checked={applicationUpdates} class="peer sr-only" />
-						<div
-							class="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#ff4d00] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
-						></div>
-					</label>
-				</div>
-
-				<div class="flex items-center justify-between">
-					<div>
-						<h3 class="font-medium text-gray-800">Weekly Reports</h3>
-						<p class="text-sm text-gray-600">Receive weekly application summary reports</p>
-					</div>
-					<label class="relative inline-flex cursor-pointer items-center">
-						<input type="checkbox" bind:checked={weeklyReports} class="peer sr-only" />
-						<div
-							class="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#ff4d00] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
-						></div>
-					</label>
-				</div>
-
-				<div class="flex items-center justify-between">
-					<div>
-						<h3 class="font-medium text-gray-800">Marketing Emails</h3>
-						<p class="text-sm text-gray-600">Receive updates about new features and tips</p>
-					</div>
-					<label class="relative inline-flex cursor-pointer items-center">
-						<input type="checkbox" bind:checked={marketingEmails} class="peer sr-only" />
-						<div
-							class="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#ff4d00] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"
-						></div>
-					</label>
-				</div>
-			</div>
-
-			<div class="mt-6">
-				<Button icon={Save} name="save notifications" onClick={handleSaveNotifications} />
-			</div>
-		</div>
-
 		<!-- Data & Privacy Section -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6">
 			<div class="mb-6 flex flex-col items-start gap-3 sm:flex-row">
@@ -345,19 +215,20 @@
 			</div>
 
 			<div class="space-y-4">
-				<div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+				<!-- <div class="blur-xs flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
 					<div>
 						<h3 class="font-medium text-gray-800">Export Your Data</h3>
 						<p class="text-sm text-gray-600">Download a copy of all your data</p>
 					</div>
 					<button
+						disabled={true}
 						onclick={handleExportData}
 						class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 					>
 						<Download class="h-4 w-4" />
 						Export Data
 					</button>
-				</div>
+				</div> -->
 
 				<div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
 					<div>

@@ -5,19 +5,13 @@
 	import {
 		Send,
 		UserPlus,
-		Mail,
 		FileText,
-		ArrowRight,
-		PencilLine,
 		Check,
 		AlertCircle,
 		Wand2,
-		Bot,
 		Edit3,
 		Zap,
 		Brain,
-		ToggleLeft,
-		ToggleRight,
 		Loader2,
 		Sparkles
 	} from '@lucide/svelte';
@@ -44,10 +38,18 @@
 	let jobDescription = $state('');
 	let jobEmail = $state('');
 	let selectedProfileId = $state('');
+	let selectedCategory = $state('');
 	let applicationSubject = $state('');
 	let coverLetter = $state<string>('');
 	let companyName = $state('');
 	let jobTitle = $state('');
+
+	const coverLetterCategories = {
+		professional: 'Professional/Formal',
+		enthusiastic: 'Enthusiastic/Energetic',
+		results: 'Results-focused/Quantitative',
+		conversational: 'Conversational/Personal'
+	};
 
 	// AI extracted data
 	let jobDetails = $derived($jobAnalysisStore.jobAnalysis);
@@ -58,6 +60,21 @@
 	// Computed values
 	let canProceed = $derived(isSmartMode ? jobDescription.trim() && jdAnalyzed : true);
 	let selectedProfile = $derived(profiles.find((p) => p.id === selectedProfileId));
+
+	// Can generate cover letter conditions
+	let canGenerateCoverLetter = $derived(
+		selectedProfileId && (isSmartMode ? jdAnalyzed && jobDetails?.coverLetter : selectedCategory)
+	);
+
+	// Variable detection for cover letter validation
+	function getUnfilledVariables(text: string): string[] {
+		const matches = text.match(/\[([^\]]+)\]/g);
+		return matches || [];
+	}
+
+	let unfilledVariables = $derived(getUnfilledVariables(coverLetter));
+	let unfilledCount = $derived(unfilledVariables.length);
+	let canSendApplication = $derived(unfilledCount === 0 && coverLetter.trim().length > 0);
 
 	// Load profiles on mount
 	onMount(async () => {
@@ -126,102 +143,59 @@
 		}
 	}
 
-	// Generate cover letter (instant for Smart Mode, template-based for Manual Mode)
+	// Unified Cover Letter Generation
 	async function generateCoverLetter() {
+		if (!selectedProfileId) {
+			error = 'Please select a profile first.';
+			return;
+		}
+
 		isGeneratingCoverLetter = true;
 		error = '';
 
 		try {
-			if (isSmartMode && jdAnalyzed && jobDetails?.coverLetter) {
-				// Smart Mode: Show pre-generated cover letter instantly!
-				setTimeout(() => {
-					coverLetter = formatCoverLetter(jobDetails?.coverLetter);
-					successMessage = 'AI-generated cover letter ready!';
-					isGeneratingCoverLetter = false;
-				}, 300); // Just a tiny delay for UX feedback
+			if (isSmartMode) {
+				// Smart Mode: Use AI-generated cover letter from job analysis
+				if (jdAnalyzed && jobDetails?.coverLetter) {
+					setTimeout(() => {
+						coverLetter = formatCoverLetter(jobDetails.coverLetter);
+						successMessage = 'AI-generated cover letter ready!';
+						isGeneratingCoverLetter = false;
+					}, 500);
+				} else {
+					throw new Error('Job description must be analyzed first in Smart Mode');
+				}
 			} else {
 				// Manual Mode: Generate template-based cover letter
-				// TODO: Replace with actual API call to template service
-				// const response = await apiService.generateTemplateCoverLetter({
-				//   profileId: selectedProfileId,
-				//   companyName,
-				//   jobTitle,
-				//   recipientEmail: jobEmail
-				// });
+				if (!selectedCategory) {
+					throw new Error('Please select a cover letter tone first');
+				}
 
-				await generateTemplateCoverLetter();
-				successMessage = 'Cover letter generated successfully!';
+				// prepare population data
+				const populationData = {
+					companyName: companyName.trim(),
+					candidateName: `${user?.firstName} ${user?.lastName}`,
+					position: jobTitle.trim()
+				};
+
+				const response = await apiService.generateTemplateCoverLetter(
+					selectedCategory,
+					populationData
+				);
+
+				if (response.data) {
+					coverLetter = formatCoverLetter(response.data);
+					successMessage = 'Template-based cover letter generated successfully!';
+				}
 			}
 		} catch (err) {
 			console.error('Failed to generate cover letter:', err);
 			error = err instanceof Error ? err.message : 'Failed to generate cover letter';
-			isGeneratingCoverLetter = false;
-		}
-	}
-
-	// Generate template-based cover letter for Manual Mode
-	async function generateTemplateCoverLetter() {
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				const profile = selectedProfile;
-				if (!profile) return;
-
-				const company = companyName || 'the company';
-				const position = jobTitle || 'this position';
-
-				// Template-based cover letter (pulled from Redis templates)
-				const templates = [
-					// Template 1: Professional
-					`Dear Hiring Manager,
-
-I am writing to express my strong interest in the ${position} position at ${company}. With my background as a ${profile.title}, I am confident that my skills and experience align perfectly with your requirements.
-
-${profile.summary}
-
-My expertise includes ${profile.skills.slice(0, 5).join(', ')}, which I believe will be valuable assets to your team. I am excited about the opportunity to contribute to ${company}'s continued growth and success.
-
-I would welcome the opportunity to discuss how my background can benefit your organization. Thank you for your consideration.
-
-Best regards,
-${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`,
-
-					// Template 2: Enthusiastic
-					`Dear ${company} Team,
-
-I am thrilled to apply for the ${position} role at ${company}. As an experienced ${profile.title}, I am excited about the possibility of bringing my passion and expertise to your organization.
-
-${profile.summary}
-
-What sets me apart is my proficiency in ${profile.skills.slice(0, 4).join(', ')} and my commitment to delivering exceptional results. I am particularly drawn to ${company} and would love to contribute to your innovative projects.
-
-I look forward to the opportunity to discuss how I can add value to your team.
-
-Sincerely,
-${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`,
-
-					// Template 3: Results-focused
-					`Dear Hiring Manager,
-
-I am excited to submit my application for the ${position} position at ${company}. As a results-driven ${profile.title}, I am confident in my ability to make a meaningful impact on your team.
-
-${profile.summary}
-
-My technical skills in ${profile.skills.slice(0, 5).join(', ')} have enabled me to consistently deliver high-quality solutions. I am eager to bring this expertise to ${company} and help drive your objectives forward.
-
-Thank you for considering my application. I look forward to hearing from you.
-
-Best regards,
-${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
-				];
-
-				// Randomly select a template (simulating Redis lookup)
-				const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
-
-				coverLetter = randomTemplate;
+		} finally {
+			if (!isSmartMode) {
 				isGeneratingCoverLetter = false;
-				resolve(randomTemplate);
-			}, 800);
-		});
+			}
+		}
 	}
 
 	async function handleSendApplication() {
@@ -306,6 +280,7 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 		jobDescription = '';
 		jobEmail = '';
 		selectedProfileId = '';
+		selectedCategory = '';
 		applicationSubject = '';
 		coverLetter = '';
 		companyName = '';
@@ -372,6 +347,7 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 			<p class="text-sm text-red-800">{error}</p>
 		</div>
 	{/if}
+
 	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-4">
 		<!-- Loading Profiles -->
 		{#if isLoadingProfiles}
@@ -483,7 +459,7 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 										name={isAnalyzingJD ? 'Analyzing...' : 'Analyze Job Description'}
 										icon={isAnalyzingJD ? Loader2 : Zap}
 										onClick={analyzeJobDescription}
-										disabled={!jobDescription.trim() || isAnalyzingJD}
+										disabled={!jobDescription.trim() || !selectedProfileId || isAnalyzingJD}
 										classes="w-full justify-center {isAnalyzingJD ? 'animate-pulse' : ''}"
 									/>
 								{:else}
@@ -541,29 +517,6 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 										<p class="text-sm text-gray-600">Complete your application information</p>
 									</div>
 								</div>
-
-								<!-- Profile Selection -->
-								<!-- <div>
-									<label for="profile" class="mb-1 block text-sm font-medium text-gray-700">
-										Select Profile <span class="text-[#ff4d00]">*</span>
-									</label>
-									<select
-										id="profile"
-										bind:value={selectedProfileId}
-										disabled={isSendingApplication || (isSmartMode && jdAnalyzed)}
-										class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										<option value="">Choose a profile</option>
-										{#each profiles as profile}
-											<option value={profile.id}>{profile.title}</option>
-										{/each}
-									</select>
-									{#if isSmartMode && !jdAnalyzed}
-										<p class="mt-1 text-xs text-gray-500">
-											Select profile before analyzing job description
-										</p>
-									{/if}
-								</div> -->
 
 								<!-- Company and Job Details -->
 								<div class="grid gap-4 sm:grid-cols-2">
@@ -640,45 +593,113 @@ ${user?.firstName || '[Your Name]'} ${user?.lastName || ''}`
 								</div>
 								<div>
 									<h3 class="text-lg font-semibold">Cover Letter</h3>
-									<p class="text-sm text-gray-600">AI-generated personalized cover letter</p>
+									<p class="text-sm text-gray-600">
+										{isSmartMode
+											? 'AI-generated personalized cover letter'
+											: 'Template-based cover letter'}
+									</p>
 								</div>
 							</div>
 
-							<!-- Generate Button -->
-							{#if selectedProfileId}
+							<!-- Single Generate Button -->
+							{#if canGenerateCoverLetter}
 								<Button
 									name={isGeneratingCoverLetter ? 'Generating...' : 'Generate'}
 									icon={isGeneratingCoverLetter ? Loader2 : Wand2}
 									onClick={generateCoverLetter}
-									disabled={!selectedProfileId ||
-										isGeneratingCoverLetter ||
-										(isSmartMode && !jdAnalyzed)}
+									disabled={isGeneratingCoverLetter}
 									classes="text-sm {isGeneratingCoverLetter ? 'animate-pulse' : ''}"
 								/>
 							{/if}
 						</div>
 
+						<!-- Manual Mode: Cover Letter Category Selection -->
+						{#if !isSmartMode}
+							<div>
+								<label for="tone" class="mb-1 block text-sm font-medium text-gray-700">
+									Cover Letter Tone <span class="text-[#ff4d00]">*</span>
+								</label>
+								<select
+									id="tone"
+									bind:value={selectedCategory}
+									disabled={isSendingApplication}
+									class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									<option value="">Choose a tone</option>
+									{#each Object.entries(coverLetterCategories) as [key, label]}
+										<option value={key}>{label}</option>
+									{/each}
+								</select>
+								<p class="mt-1 text-xs text-gray-500">
+									Select a tone before generating a cover letter
+								</p>
+							</div>
+						{/if}
+
 						<!-- Cover Letter Textarea -->
 						<div>
-							<textarea
-								bind:value={coverLetter}
-								disabled={isSendingApplication}
-								placeholder={selectedProfileId
-									? "Click 'Generate' to create a personalized cover letter using AI"
-									: 'Select a profile first to generate a cover letter'}
-								rows="20"
-								class="w-full resize-none rounded-md border border-gray-300 p-3 text-sm focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-							></textarea>
+							<!-- Variable Warning UI -->
+							{#if unfilledCount > 0 && coverLetter.length > 0}
+								<div
+									class="mb-3 flex flex-col items-center gap-2 rounded-md border border-orange-200 bg-orange-50 p-3"
+								>
+									<div class="flex items-center gap-4">
+										<AlertCircle class="h-5 w-5 text-orange-600" />
+										<p class="text-sm font-medium text-orange-800">
+											{unfilledCount} variable{unfilledCount > 1 ? 's' : ''} remaining
+										</p>
+									</div>
+									<p class="text-xs text-orange-700">
+										Please replace the bracketed placeholders: {unfilledVariables.join(', ')}
+									</p>
+								</div>
+							{/if}
+
+							<div class="relative">
+								<textarea
+									bind:value={coverLetter}
+									disabled={isSendingApplication}
+									placeholder={selectedProfileId
+										? canGenerateCoverLetter
+											? "Click 'Generate' to create a personalized cover letter"
+											: isSmartMode
+												? 'Analyze job description first to generate cover letter'
+												: 'Select a tone first to generate cover letter'
+										: 'Select a profile first to generate a cover letter'}
+									rows="15"
+									class="w-full resize-none rounded-md border border-gray-300 p-3 text-sm focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+								></textarea>
+								<!-- Variable highlighting overlay (optional enhancement) -->
+								<!-- {#if unfilledCount > 0}
+									<div
+										class="pointer-events-none absolute inset-0 rounded-md p-3 text-sm text-transparent"
+										style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;"
+									>
+										{@html coverLetter.replace(
+											/\[([^\]]+)\]/g,
+											'<span class="bg-[#ff4d00]/20 text-[#ff4d00] font-semibold">[$1]</span>'
+										)}
+									</div>
+								{/if} -->
+							</div>
 						</div>
 
 						<!-- Send Application Button -->
 						<Button
 							name={isSendingApplication ? 'Sending...' : 'Send Application'}
 							icon={Send}
-							onClick={handleSendApplication}
-							disabled={!coverLetter.trim() || isSendingApplication}
+							onClick={canSendApplication
+								? handleSendApplication
+								: () => {
+										if (unfilledCount > 0) {
+											error = `Please fill in the remaining ${unfilledCount} variable${unfilledCount > 1 ? 's' : ''} in your cover letter before sending.`;
+										} else {
+											error = 'Please generate a cover letter first.';
+										}
+									}}
+							disabled={isSendingApplication}
 							classes="w-full justify-center {isSendingApplication
-								? 'opacity-50 cursor-not-allowed'
+								? 'opacity-50 cursor-not-allowed bg-gray-400'
 								: ''}"
 						/>
 					</div>

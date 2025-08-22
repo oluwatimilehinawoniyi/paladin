@@ -74,6 +74,12 @@ export interface JobAnalysisResponse {
 	};
 }
 
+export interface GenerateTemplateProps {
+	companyName: string;
+	candidateName: string;
+	position: string;
+}
+
 class ApiService {
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
 		try {
@@ -117,10 +123,31 @@ class ApiService {
 			return responseData;
 		} catch (error) {
 			if (error instanceof TypeError && error.message.includes('fetch')) {
-				throw new Error('Network error - please check your connection');
+				throw new Error('Network error - please check your connection', error);
 			}
 			throw error;
 		}
+	}
+
+	// generate cover letter for manual mode
+	async generateTemplateCoverLetter(
+		category: string,
+		{ companyName, candidateName, position }: GenerateTemplateProps
+	): Promise<ApiResponse<string>> {
+		const encodedCategory = encodeURIComponent(category);
+
+		const response = await fetch(
+			`${API_BASE_URL}/v1/cover-letters/generate/${encodedCategory}?candidateName=${candidateName}&companyName=${companyName}&position=${position}`,
+			{
+				credentials: 'include',
+				method: 'GET'
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+		return response.json();
 	}
 
 	// job description analysis
