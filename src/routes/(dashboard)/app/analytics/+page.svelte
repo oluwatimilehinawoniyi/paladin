@@ -181,7 +181,7 @@
 
 				<!-- Applications Table -->
 				<div class="w-full overflow-x-auto">
-					<table class="w-[450%] min-w-full whitespace-nowrap md:w-[205%] lg:w-full">
+					<table class="w-[450%] whitespace-nowrap md:w-[200%] lg:w-full">
 						<thead>
 							<tr class="border-b border-gray-200">
 								<th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
@@ -229,12 +229,9 @@
 									<td class="px-4 py-4">
 										<a
 											href="mailto:{application.jobEmail}"
-											class="grid grid-cols-[auto_auto] items-center gap-1 text-sm text-gray-600 hover:text-[#ff4d00]"
+											class="text-sm text-gray-600 hover:text-[#ff4d00]"
 										>
-											<Mail class=" size-3 translate-y-0.5" />
-											<p class="">
 												{application.jobEmail}
-											</p>
 										</a>
 									</td>
 								</tr>
