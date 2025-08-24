@@ -10,7 +10,6 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 	}
 
 	try {
-		console.log('🛡️ Checking auth for dashboard...');
 
 		// Check if user is authenticated
 		const response = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -18,12 +17,10 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 		});
 
 		if (!response.ok) {
-			console.log('❌ User not authenticated for dashboard, redirecting to login');
 			throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 		}
 
 		const data = await response.json();
-		console.log('✅ User authenticated for dashboard:', data.data?.user?.email);
 
 		return {
 			user: data.data?.user || data.user
@@ -35,7 +32,6 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
 			throw error;
 		}
 
-		console.log('❌ Dashboard auth failed, redirecting to login');
 		throw redirect(302, `/auth/login?redirect=${encodeURIComponent(url.pathname)}`);
 	}
 };

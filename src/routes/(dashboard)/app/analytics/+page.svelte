@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { apiService, type Application, type ApplicationStatus } from '$lib/api/apiService';
+	import Icon from '$lib/components/ui/Icon.svelte';
+	import { formatDate } from '$lib/utils/formatDate';
 	import {
 		Calendar,
 		Users,
@@ -12,97 +15,54 @@
 		XCircle,
 		Clock,
 		Eye,
-		ExternalLink
+		ExternalLink,
+		Send
 	} from '@lucide/svelte';
-
-	// Mock data for applications - this would come from your data store/API
-	let applications = [
-		{
-			id: 1,
-			company: 'TechCorp Inc.',
-			position: 'Senior Frontend Developer',
-			dateApplied: '1/20/2024',
-			profileUsed: 'Frontend Developer',
-			status: 'Interview',
-			contact: 'hr@techcorp.com'
-		},
-		{
-			id: 2,
-			company: 'StartupXYZ',
-			position: 'Full Stack Engineer',
-			dateApplied: '1/18/2024',
-			profileUsed: 'Full Stack Engineer',
-			status: 'Applied',
-			contact: 'jobs@startupxyz.com'
-		},
-		{
-			id: 3,
-			company: 'DataFlow Solutions',
-			position: 'React Developer',
-			dateApplied: '1/15/2024',
-			profileUsed: 'Frontend Developer',
-			status: 'Rejected',
-			contact: 'careers@dataflow.com'
-		},
-		{
-			id: 4,
-			company: 'InnovateLabs',
-			position: 'Software Engineer',
-			dateApplied: '1/12/2024',
-			profileUsed: 'Full Stack Engineer',
-			status: 'Offer',
-			contact: 'talent@innovatelabs.com'
-		},
-		{
-			id: 5,
-			company: 'CloudTech Systems',
-			position: 'Frontend Specialist',
-			dateApplied: '1/10/2024',
-			profileUsed: 'Frontend Developer',
-			status: 'Interview',
-			contact: 'hr@cloudtech.com'
-		},
-		{
-			id: 6,
-			company: 'WebDev Agency',
-			position: 'UI Developer',
-			dateApplied: '1/8/2024',
-			profileUsed: 'Frontend Developer',
-			status: 'Applied',
-			contact: 'jobs@webdevagency.com'
-		}
-	];
-
-	// Summary statistics
-	let totalApplications = 95;
-	let totalInterviews = 27; // 28.4% of 95
-	let totalOffers = 12; // 12.6% of 95
-	let successRate = 44.4; // Interviews to offers conversion
-
-	// Goals progress
-	let applicationGoal = 25;
-	let interviewGoal = 5;
-	let offerGoal = 2;
-	let currentApplications = 22;
-	let currentInterviews = 7;
-	let currentOffers = 4;
+	import { onMount } from 'svelte';
 
 	// Filter and search state
-	let searchQuery = '';
-	let statusFilter = 'All Statuses';
-	let profileFilter = 'All Profiles';
+	let searchQuery = $state('');
+	let statusFilter = $state('All Statuses');
+	let profileFilter = $state('All Profiles');
+
+	let applications: Application[] = $state([]);
+
+	onMount(async () => {
+		await loadApplications();
+	});
+
+	async function loadApplications() {
+		try {
+			const response = await apiService.getMyApplications();
+			applications = response.data;
+		} catch (error) {
+			console.error('Failed to load applications:', error);
+			applications = [];
+		}
+	}
+
+	async function updateStatus(applicationId: string, newStatus: ApplicationStatus) {
+		try {
+			await apiService.updateApplicationStatus(applicationId, newStatus);
+			await loadApplications();
+		} catch (error) {
+			console.error('Failed to update status:', error);
+		}
+	}
 
 	// Status color mapping
 	function getStatusColor(status: string) {
-		switch (status.toLowerCase()) {
-			case 'applied':
+		switch (status) {
+			case 'SENT':
 				return 'bg-blue-100 text-blue-800';
-			case 'interview':
+			case 'INTERVIEW':
 				return 'bg-yellow-100 text-yellow-800';
-			case 'offer':
+			case 'ACCEPTED':
 				return 'bg-green-100 text-green-800';
-			case 'rejected':
+			case 'REJECTED':
 				return 'bg-red-100 text-red-800';
+			case 'FOLLOW_UP':
+				return 'bg-orange-100 text-orange-800';
 			default:
 				return 'bg-gray-100 text-gray-800';
 		}
@@ -124,69 +84,20 @@
 		}
 	}
 
+	let fetchedProfiles = $derived(applications.map((app) => app.profile));
+
 	// Filter applications based on search and filters
-	$: filteredApplications = applications.filter((app) => {
-		const matchesSearch =
-			app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			app.position.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesStatus = statusFilter === 'All Statuses' || app.status === statusFilter;
-		const matchesProfile = profileFilter === 'All Profiles' || app.profileUsed === profileFilter;
+	let filteredApplications = $derived(
+		applications.filter((app) => {
+			const matchesSearch =
+				app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
+			const matchesStatus = statusFilter === 'All Statuses' || app.status === statusFilter;
+			const matchesProfile = profileFilter === 'All Profiles' || app.profile === profileFilter;
 
-		return matchesSearch && matchesStatus && matchesProfile;
-	});
-
-	// Calculate percentages for display
-	$: interviewRate =
-		totalApplications > 0 ? ((totalInterviews / totalApplications) * 100).toFixed(1) : '0.0';
-	$: offerRate =
-		totalApplications > 0 ? ((totalOffers / totalApplications) * 100).toFixed(1) : '0.0';
-	$: conversionRate =
-		totalInterviews > 0 ? ((totalOffers / totalInterviews) * 100).toFixed(1) : '0.0';
-
-	// Calculate goal progress percentages
-	$: applicationProgress = Math.min((currentApplications / applicationGoal) * 100, 100);
-	$: interviewProgress = Math.min((currentInterviews / interviewGoal) * 100, 100);
-	$: offerProgress = Math.min((currentOffers / offerGoal) * 100, 100);
-
-	// Mock data for trend chart (would be calculated from real data)
-	let trendData = [
-		{ week: 'Week 1', applications: 3, interviews: 1, offers: 0 },
-		{ week: 'Week 2', applications: 3, interviews: 1, offers: 1 },
-		{ week: 'Week 3', applications: 4, interviews: 2, offers: 1 },
-		{ week: 'Week 4', applications: 4, interviews: 3, offers: 2 }
-	];
-
-	// Insight recommendations
-	let insights = [
-		{
-			type: 'success',
-			title: 'Frontend Profile Performing Well',
-			message: 'Your Frontend Developer profile has the highest usage and success rate',
-			icon: TrendingUp
-		},
-		{
-			type: 'warning',
-			title: 'Optimize Application Timing',
-			message: 'Consider applying earlier in the week for faster response times',
-			icon: Calendar
-		},
-		{
-			type: 'info',
-			title: 'Diversify Your Approach',
-			message: 'Try using your other profiles more frequently to expand opportunities',
-			icon: Target
-		}
-	];
-
-	function handleApplicationView(id: number) {
-		console.log('View application details:', id);
-		// Navigate to application details or open modal
-	}
-
-	function handleCompanyVisit(company: string) {
-		console.log('Visit company website:', company);
-		// Open company website in new tab
-	}
+			return matchesSearch && matchesStatus && matchesProfile;
+		})
+	);
 </script>
 
 <section class="flex w-full flex-col gap-8 overflow-hidden p-4 md:h-screen md:pt-14">
@@ -199,189 +110,203 @@
 	</div>
 
 	<div class="custom-scrollbar flex-1 space-y-8 overflow-x-hidden overflow-y-auto pb-4">
-
 		<!-- Application History Table -->
-		<div class="overflow-x-scroll rounded-lg border border-gray-200 bg-white p-6">
-			<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h3 class="text-lg font-semibold text-gray-800">Application History</h3>
-					<p class="text-sm text-gray-600">Track and manage all your job applications</p>
+		{#if applications.length === 0}
+			<div class="flex flex-col items-center justify-center py-12">
+				<div class="text-center">
+					<Send class="mx-auto h-12 w-12 text-gray-400" />
+					<h3 class="mt-4 text-lg font-medium text-gray-900">No applications yet</h3>
+					<p class="mt-2 text-gray-500">Start applying for jobs to see your analytics here.</p>
+					<a
+						href="/app/applications"
+						class="mt-4 inline-flex items-center gap-2 rounded-md bg-[#ff4d00] px-4 py-2 text-white hover:bg-[#ff4d00]/90"
+					>
+						<Send class="h-4 w-4" />
+						Apply for Jobs
+					</a>
 				</div>
 			</div>
-
-			<!-- Filters & Search -->
-			<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-				<!-- Search -->
-				<div class="relative flex-1">
-					<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-					<input
-						type="text"
-						placeholder="Search companies or positions..."
-						bind:value={searchQuery}
-						class="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-					/>
+		{:else}
+			<div class="overflow-x-hidden rounded-lg border border-gray-200 bg-white p-6">
+				<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<h3 class="text-lg font-semibold text-gray-800">Application History</h3>
+						<p class="text-sm text-gray-600">Track and manage all your job applications</p>
+					</div>
 				</div>
 
-				<!-- Quick Actions -->
-				<div class="flex items-center gap-2">
-					<button
-						class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
-					>
-						<Calendar class="h-4 w-4" />
-						Last 30 Days
-						<ChevronDown class="h-4 w-4" />
-					</button>
+				<!-- Filters & Search -->
+				<div class="mb-6 flex w-full flex-wrap gap-4 sm:items-center">
+					<!-- Search -->
+					<div class="relative">
+						<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+						<input
+							type="text"
+							placeholder="Search companies or positions..."
+							bind:value={searchQuery}
+							class="w-full max-w-72 rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						/>
+					</div>
+
+					<!-- Status Filter -->
+					<div class="relative">
+						<select
+							bind:value={statusFilter}
+							class="appearance-none rounded-md border border-gray-300 bg-white py-2 pr-8 pl-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						>
+							<option>All Statuses</option>
+							<option value="SENT">Sent</option>
+							<option value="INTERVIEW">Interview</option>
+							<option value="ACCEPTED">Accepted</option>
+							<option value="REJECTED">Rejected</option>
+							<option value="FOLLOW_UP">Follow Up</option>
+						</select>
+						<ChevronDown class="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+					</div>
+
+					<!-- Profile Filter -->
+					<div class="relative">
+						<select
+							bind:value={profileFilter}
+							class="appearance-none rounded-md border border-gray-300 bg-white py-2 pr-8 pl-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
+						>
+							<option>All Profiles</option>
+							{#each fetchedProfiles as profile}
+								<option value={profile}>{profile}</option>
+							{/each}
+						</select>
+						<ChevronDown class="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+					</div>
 				</div>
 
-				<!-- Status Filter -->
-				<div class="relative">
-					<select
-						bind:value={statusFilter}
-						class="appearance-none rounded-md border border-gray-300 bg-white py-2 pr-8 pl-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-					>
-						<option>All Statuses</option>
-						<option>Applied</option>
-						<option>Interview</option>
-						<option>Offer</option>
-						<option>Rejected</option>
-					</select>
-					<ChevronDown class="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-				</div>
-
-				<!-- Profile Filter -->
-				<div class="relative">
-					<select
-						bind:value={profileFilter}
-						class="appearance-none rounded-md border border-gray-300 bg-white py-2 pr-8 pl-3 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none"
-					>
-						<option>All Profiles</option>
-						<option>Frontend Developer</option>
-						<option>Full Stack Engineer</option>
-						<option>Backend Developer</option>
-					</select>
-					<ChevronDown class="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-				</div>
-			</div>
-
-			<!-- Applications Table -->
-			<div class="overflow-x-auto">
-				<table class="w-full">
-					<thead>
-						<tr class="border-b border-gray-200">
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Position</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Date Applied</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Profile Used</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-600">Contact</th>
-							<!-- <th class="text-left py-3 px-4 font-medium text-gray-600">Actions</th> -->
-						</tr>
-					</thead>
-					<tbody>
-						{#each filteredApplications as application (application.id)}
-							{@const StatusIcon = getStatusIcon(application.status)}
-							<tr class="border-b border-gray-100 hover:bg-gray-50">
-								<td class="px-4 py-4">
-									<div class="flex items-center gap-2">
-										<button
-											onclick={() => handleCompanyVisit(application.company)}
-											class="font-medium text-gray-900 hover:text-[#ff4d00] hover:underline"
-										>
-											{application.company}
-										</button>
-										<ExternalLink class="h-3 w-3 text-gray-400" />
-									</div>
-								</td>
-								<td class="px-4 py-4 text-gray-600">{application.position}</td>
-								<td class="px-4 py-4 text-gray-600">{application.dateApplied}</td>
-								<td class="px-4 py-4 text-gray-600">{application.profileUsed}</td>
-								<td class="px-4 py-4">
-									<span
-										class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium {getStatusColor(
-											application.status
-										)}"
-									>
-										<StatusIcon class="h-3 w-3" />
-										{application.status}
-									</span>
-								</td>
-								<td class="px-4 py-4">
-									<a
-										href="mailto:{application.contact}"
-										class="flex items-center gap-1 text-sm text-gray-600 hover:text-[#ff4d00]"
-									>
-										<Mail class="h-3 w-3" />
-										{application.contact}
-									</a>
-								</td>
-								<!-- <td class="py-4 px-4">
-									<button
-										onclick={() => handleApplicationView(application.id)}
-										class="flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-									>
-										<Eye class="h-3 w-3" />
-										View
-									</button>
-								</td> -->
+				<!-- Applications Table -->
+				<div class="w-full overflow-x-auto">
+					<table class="w-[450%] min-w-full whitespace-nowrap md:w-[205%] lg:w-full">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
+								<th class="px-4 py-3 text-left font-medium text-gray-600">Position</th>
+								<th class="px-8 py-3 text-left font-medium text-gray-600">Date Applied</th>
+								<th class="px-4 py-3 text-left font-medium text-gray-600">Profile Used</th>
+								<th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+								<th class="px-4 py-3 text-left font-medium text-gray-600">Contact</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each filteredApplications as application (application.id)}
+								{@const StatusIcon = getStatusIcon(application.status)}
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+									<td class="px-4 py-4">
+										<div class="flex items-center gap-2">
+											<Icon icon={StatusIcon} />
+											<p class="text-gray-600 capitalize">
+												{application.company}
+											</p>
+										</div>
+									</td>
+									<td class="px-4 py-4 text-gray-600 capitalize">{application.jobTitle}</td>
+									<td class="px-8 py-4 text-gray-600">{formatDate(application.sentAt)}</td>
+									<td class="px-4 py-4 text-gray-600">{application.profile}</td>
+									<td class="px-4 py-4">
+										<select
+											value={application?.status}
+											onchange={(e) =>
+												updateStatus(
+													application.id,
+													(e.target as HTMLSelectElement).value as ApplicationStatus
+												)}
+											class="rounded border px-2 py-1 text-xs outline-0 {getStatusColor(
+												application.status.toLocaleUpperCase()
+											)}"
+										>
+											<option value="SENT">Sent</option>
+											<option value="INTERVIEW">Interview</option>
+											<option value="ACCEPTED">Accepted</option>
+											<option value="REJECTED">Rejected</option>
+											<option value="FOLLOW_UP">Follow Up</option>
+										</select>
+									</td>
+									<td class="px-4 py-4">
+										<a
+											href="mailto:{application.jobEmail}"
+											class="grid grid-cols-[auto_auto] items-center gap-1 text-sm text-gray-600 hover:text-[#ff4d00]"
+										>
+											<Mail class=" size-3 translate-y-0.5" />
+											<p class="">
+												{application.jobEmail}
+											</p>
+										</a>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 
-				{#if filteredApplications.length === 0}
-					<div class="py-12 text-center">
-						<Search class="mx-auto h-12 w-12 text-gray-400" />
-						<h3 class="mt-4 text-lg font-medium text-gray-900">No applications found</h3>
-						<p class="mt-2 text-gray-500">Try adjusting your search or filter criteria.</p>
-					</div>
-				{/if}
-			</div>
+					{#if filteredApplications.length === 0}
+						<div class="py-12 text-center">
+							<Search class="mx-auto h-12 w-12 text-gray-400" />
+							<h3 class="mt-4 text-lg font-medium text-gray-900">No applications found</h3>
+							<p class="mt-2 text-gray-500">Try adjusting your search or filter criteria.</p>
+						</div>
+					{/if}
+				</div>
 
-			<!-- Table Footer with Stats -->
-			<div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
-				<p class="text-sm text-gray-600">
-					Showing {filteredApplications.length} of {applications.length} applications
-				</p>
-				<div class="flex items-center gap-4 text-sm">
-					<div class="flex items-center gap-1">
-						<div class="h-2 w-2 rounded-full bg-blue-500"></div>
-						<span class="text-gray-600"
-							>Applied ({applications.filter((a) => a.status === 'Applied').length})</span
-						>
-					</div>
-					<div class="flex items-center gap-1">
-						<div class="h-2 w-2 rounded-full bg-yellow-500"></div>
-						<span class="text-gray-600"
-							>Interview ({applications.filter((a) => a.status === 'Interview').length})</span
-						>
-					</div>
-					<div class="flex items-center gap-1">
-						<div class="h-2 w-2 rounded-full bg-green-500"></div>
-						<span class="text-gray-600"
-							>Offer ({applications.filter((a) => a.status === 'Offer').length})</span
-						>
-					</div>
-					<div class="flex items-center gap-1">
-						<div class="h-2 w-2 rounded-full bg-red-500"></div>
-						<span class="text-gray-600"
-							>Rejected ({applications.filter((a) => a.status === 'Rejected').length})</span
-						>
+				<!-- Table Footer with Stats -->
+				<div
+					class="mt-6 flex flex-col justify-between gap-4 border-t border-gray-200 pt-4 lg:flex-row lg:items-center"
+				>
+					<p class="text-sm text-gray-600">
+						Showing {filteredApplications.length} of {applications.length} applications
+					</p>
+					<div class="grid grid-cols-2 gap-4 text-sm md:grid-cols-4 lg:grid-cols-5">
+						<div class="flex flex-col gap-1 lg:flex-row lg:items-center">
+							<div class="h-2 w-2 rounded-full bg-blue-500"></div>
+							<span class="text-gray-600"
+								>Sent ({applications.filter((a) => a.status === 'Sent'.toLocaleUpperCase())
+									.length})</span
+							>
+						</div>
+						<div class="flex flex-col gap-1 lg:flex-row lg:items-center">
+							<div class="h-2 w-2 rounded-full bg-yellow-500"></div>
+							<span class="text-gray-600"
+								>Interview ({applications.filter(
+									(a) => a.status === 'Interview'.toLocaleUpperCase()
+								).length})</span
+							>
+						</div>
+						<div class="flex flex-col gap-1 lg:flex-row lg:items-center">
+							<div class="h-2 w-2 rounded-full bg-green-500"></div>
+							<span class="text-gray-600"
+								>Accepted ({applications.filter((a) => a.status === 'Accepted'.toLocaleUpperCase())
+									.length})</span
+							>
+						</div>
+						<div class="flex flex-col gap-1 lg:flex-row lg:items-center">
+							<div class="h-2 w-2 rounded-full bg-red-500"></div>
+							<span class="text-gray-600"
+								>Rejected ({applications.filter((a) => a.status === 'Rejected'.toLocaleUpperCase())
+									.length})</span
+							>
+						</div>
+						<div class="flex flex-col gap-1 lg:flex-row lg:items-center">
+							<div class="h-2 w-2 rounded-full bg-red-500"></div>
+							<span class="text-gray-600"
+								>Follow Up ({applications.filter(
+									(a) => a.status === 'Follow_up'.toLocaleUpperCase()
+								).length})</span
+							>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<!-- 
-		Main Content Grid
-		<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-			Profile Usage & Insights (Right Column - 1/3 width)
-			<div class="space-y-6">
-				Profile Usage Distribution
-			</div>
-		</div> -->
+		{/if}
 	</div>
 </section>
 
 <style>
+	table {
+		table-layout: fixed;
+	}
 	.custom-scrollbar {
 		scrollbar-width: thin;
 		scrollbar-color: #ff4d00 transparent;

@@ -3,6 +3,8 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { modalStore } from '$lib/stores/modalStore';
 	import { profilesStore } from '$lib/stores/profilesStore';
+	import { formatDate } from "$lib/utils/formatDate";
+	import { formatFileSize } from "$lib/utils/formatFileSize";
 	import {
 		Upload,
 		Loader2,
@@ -19,7 +21,6 @@
 		Plus
 	} from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import { format } from 'date-fns';
 
 	// Subscribe to profiles store
 	let profiles = $derived($profilesStore.profiles);
@@ -169,22 +170,6 @@
 				}
 			}
 		});
-	}
-
-	function formatFileSize(bytes: number): string {
-		if (bytes === 0) return '0 B';
-		const k = 1024;
-		const sizes = ['B', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-	}
-
-	function formatDate(dateString: string): string {
-		try {
-			return format(new Date(dateString), 'dd-MM-yyyy');
-		} catch {
-			return 'Unknown date';
-		}
 	}
 
 	async function handleRetry() {

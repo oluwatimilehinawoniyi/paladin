@@ -80,6 +80,17 @@ export interface GenerateTemplateProps {
 	position: string;
 }
 
+export type ApplicationStatus = 'SENT' | 'INTERVIEW' | 'REJECTED' | 'ACCEPTED' | 'FOLLOW_UP';
+
+export interface Application {
+	id: string;
+	company: string;
+	jobEmail: string;
+	jobTitle: string;
+	profile: string;
+	status: ApplicationStatus;
+	sentAt: string;
+}
 class ApiService {
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
 		try {
@@ -287,8 +298,18 @@ class ApiService {
 		});
 	}
 
-	async getMyApplications(): Promise<ApiResponse<any[]>> {
+	async getMyApplications(): Promise<ApiResponse<Application[]>> {
 		return this.makeRequest('/v1/job-applications/me');
+	}
+
+	async updateApplicationStatus(
+		applicationId: string,
+		status: ApplicationStatus
+	): Promise<ApiResponse<Application>> {
+		return this.makeRequest(`/v1/job-applications/${applicationId}/status`, {
+			method: 'PATCH',
+			body: JSON.stringify(status)
+		});
 	}
 
 	// Auth & user mgmt
