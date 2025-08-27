@@ -47,7 +47,7 @@
 	<div class="bg-gray-50 rounded-lg px-4 py-2 text-left">
 		<h3 class="font-semibold text-gray-800 mb-1.5">Application Summary</h3>
 		
-		<div class="space-y-2 text-xs text-sm">
+		<div class="space-y-2">
 			<div class="flex items-center gap-2">
 				<Building class="size-3 text-gray-500" />
 				<span class="text-gray-600">Company:</span>

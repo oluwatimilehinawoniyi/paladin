@@ -10,8 +10,6 @@
 	let isCheckingAuth = $state(true);
 
 	onMount(async () => {
-		console.log('🚀 Login page mounted');
-
 		// Check for OAuth error
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('error') === 'oauth_failed') {
@@ -24,23 +22,18 @@
 
 		// Check if user is already authenticated
 		try {
-			console.log('🔍 Checking if user is already logged in...');
 			const response = await fetch('http://localhost:8080/api/auth/me', {
 				credentials: 'include'
 			});
 
 			if (response.ok) {
-				console.log('✅ User already authenticated, redirecting to app');
 				const redirectUrl = $page.url.searchParams.get('redirect') || '/app';
 				goto(redirectUrl);
 				return;
 			}
-		} catch (e) {
-			console.log('❌ User not authenticated (expected)');
-		}
+		} catch (e) {}
 
 		isCheckingAuth = false;
-		console.log('🏁 Login page ready');
 	});
 
 	function handleGoogleLogin() {
@@ -49,11 +42,8 @@
 		isLoading = true;
 		error = '';
 
-		console.log('🚀 Starting Google OAuth login...');
-
 		// Get redirect URL from query params
 		const redirectUrl = $page.url.searchParams.get('redirect') || '/app';
-		console.log('🎯 Will redirect to:', redirectUrl, 'after login');
 
 		// Store redirect URL in sessionStorage
 		if (typeof window !== 'undefined') {
