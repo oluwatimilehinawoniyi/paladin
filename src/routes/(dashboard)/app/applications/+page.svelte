@@ -348,7 +348,7 @@
 		</div>
 	{/if}
 
-	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-4">
+	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-">
 		<!-- Loading Profiles -->
 		{#if isLoadingProfiles}
 			<div class="flex h-full items-center justify-center">
@@ -360,7 +360,7 @@
 
 			<!-- No Profiles State -->
 		{:else if profiles.length === 0}
-			<div class="flex h-full flex-col items-center justify-center">
+			<div class="flex h-screen flex-col items-center justify-center">
 				<div class="mx-auto flex max-w-lg flex-col items-center gap-8 text-center">
 					<div class="relative">
 						<div
@@ -666,7 +666,7 @@
 												? 'Analyze job description first to generate cover letter'
 												: 'Select a tone first to generate cover letter'
 										: 'Select a profile first to generate a cover letter'}
-									rows="15"
+									rows="10"
 									class="w-full resize-none rounded-md border border-gray-300 p-3 text-sm focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 								></textarea>
 								<!-- Variable highlighting overlay (optional enhancement) -->
