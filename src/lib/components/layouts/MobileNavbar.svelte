@@ -1,8 +1,20 @@
 <script lang="ts">
-	import { Menu, X, User, Send, BarChart3, Settings, LogOut, UserRoundPlus } from '@lucide/svelte';
+	import {
+		Menu,
+		X,
+		User,
+		Send,
+		BarChart3,
+		Settings,
+		LogOut,
+		UserRoundPlus,
+		Loader2
+	} from '@lucide/svelte';
 	import { page } from '$app/stores';
 	import logo from '$lib/assets/logo.png';
 	import Button from '../ui/Button.svelte';
+	import { authStore } from '$lib/stores/authStore';
+	import { onMount } from 'svelte';
 
 	let isOpen = $state(false);
 
@@ -72,6 +84,21 @@
 			};
 		}
 	});
+
+	let user = $derived($authStore.user);
+	let isLoading = $derived($authStore.isLoading);
+	let isInitialized = $derived($authStore.isInitialized);
+
+	// Initialize auth store on mount
+	onMount(async () => {
+		if (!$authStore.isInitialized) {
+			await authStore.init();
+		}
+	});
+
+	async function handleLogout() {
+		await authStore.logout();
+	}
 </script>
 
 <!-- Mobile Navbar - Only visible on mobile -->
@@ -154,27 +181,46 @@
 				</div>
 
 				<!-- User Section -->
-				<div class="border-t border-gray-200 p-4">
-					<!-- User Info -->
-					<div class="mb-4 flex items-center gap-3">
-						<div class="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-							<User class="h-5 w-5 text-[#ff4d00]" />
+				<div class="space-y-4 border-t border-[#ff4d00]/30 py-4 px-4">
+					<div class="flex items-center gap-4">
+						<div class="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
+							{#if isLoading && !isInitialized}
+								<Loader2 class="h-4 w-4 animate-spin text-[#ff4d00]" />
+							{:else}
+								<User class="h-4 w-4 text-[#ff4d00]" />
+							{/if}
 						</div>
 						<div class="min-w-0 flex-1">
-							<p class="truncate font-medium text-gray-900">John Doe</p>
-							<p class="truncate text-sm text-gray-500">johndoe@gmail.com</p>
+							{#if isLoading && !isInitialized}
+								<!-- Loading skeleton -->
+								<div class="animate-pulse">
+									<div class="mb-1 h-4 w-20 rounded bg-gray-300"></div>
+									<div class="h-3 w-24 rounded bg-gray-200"></div>
+								</div>
+							{:else if user}
+								<!-- User data loaded -->
+								<p class="truncate text-sm font-medium text-gray-900">
+									{user.firstName}
+									{user.lastName}
+								</p>
+								<p class="truncate text-xs text-gray-500">
+									{user.email}
+								</p>
+							{:else}
+								<!-- No user data -->
+								<p class="truncate text-sm font-medium text-gray-500">Not logged in</p>
+								<p class="truncate text-xs text-gray-400">Please refresh</p>
+							{/if}
 						</div>
 					</div>
 
-					<!-- Action Buttons -->
-					<div class="">
-						<button
-							class="flex w-full items-center justify-center gap-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-						>
-							<LogOut class="size-4" />
-							Logout
-						</button>
-					</div>
+					<Button
+						name="logout"
+						classes="w-full"
+						icon={LogOut}
+						onClick={handleLogout}
+						disabled={isLoading && !isInitialized}
+					/>
 				</div>
 			</div>
 		</div>
