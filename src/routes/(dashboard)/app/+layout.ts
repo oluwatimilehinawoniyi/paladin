@@ -1,8 +1,9 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
+import { API_CONFIG } from "$lib/api/apiService";
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = API_CONFIG.baseURL;
 
 export const load: LayoutLoad = async ({ fetch, url }) => {
 	if (!browser) {

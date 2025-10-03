@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { API_CONFIG } from "$lib/api/apiService";
 
 	let isLoading = $state(false);
 	let error = $state('');
@@ -22,7 +23,7 @@
 
 		// Check if user is already authenticated
 		try {
-			const response = await fetch('http://localhost:8080/api/auth/me', {
+			const response = await fetch(`${API_CONFIG.baseURL}/auth/me`, {
 				credentials: 'include'
 			});
 
@@ -51,7 +52,7 @@
 		}
 
 		// Redirect to backend OAuth endpoint
-		window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+		window.location.href = API_CONFIG.oauthURL;
 	}
 
 	// Clear error after 5 seconds

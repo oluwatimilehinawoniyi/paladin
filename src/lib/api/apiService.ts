@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// const API_BASE_URL = 'http://localhost:8080/api';
-const API_BASE_URL = 'https://paladin-be-8eieva.fly.dev/';
+
+export const API_CONFIG = {
+	baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+	apiURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+	oauthURL: import.meta.env.VITE_OAUTH_URL || 'http://localhost:8080/oauth2/authorization/google',
+	timeout: 30000,
+	withCredentials: true
+} as const;
+
+const API_BASE_URL = API_CONFIG.baseURL;
 
 export interface ProfileCreateRequest {
 	title: string;
