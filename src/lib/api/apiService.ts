@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { tokenService } from '$lib/services/tokenService';
+import { browser } from '$app/environment';
 
 export const API_CONFIG = {
 	baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
@@ -36,17 +38,17 @@ export interface ProfileResponse {
 
 export interface User {
 	id: string;
+	email: string;
 	firstName: string;
 	lastName: string;
-	email: string;
-	createdAt: string;
-	updatedAt?: string;
+	createdAt?: string;
 }
 
 export interface AuthResponse {
 	user: User;
-	token?: string;
-	message: string;
+	accessToken: string;
+	refreshToken: string;
+	expiresIn: number;
 }
 
 export interface ApiResponse<T> {
@@ -101,81 +103,193 @@ export interface Application {
 	sentAt: string;
 }
 class ApiService {
+	private isRefreshing = false;
+	private refreshSubscribers: Array<(token: string) => void> = [];
+
+	/**
+	 * Get Authorization header with JWT token
+	 */
+	private getAuthHeaders(): HeadersInit {
+		const token = tokenService.getAccessToken();
+		const headers: HeadersInit = {
+			'Content-Type': 'application/json'
+		};
+
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+
+		return headers;
+	}
+
+	/**
+	 * Refresh the access token
+	 */
+	private async refreshAccessToken(): Promise<string | null> {
+		const refreshToken = tokenService.getRefreshToken();
+
+		if (!refreshToken) {
+			console.error('No refresh token available');
+			return null;
+		}
+
+		try {
+			const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ refreshToken })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to refresh token');
+			}
+
+			const data = await response.json();
+			const { accessToken, refreshToken: newRefreshToken } = data.data;
+
+			// Store new tokens
+			tokenService.setTokens(accessToken, newRefreshToken);
+			console.log('Token refreshed successfully');
+
+			return accessToken;
+		} catch (error) {
+			console.error('Token refresh failed:', error);
+			// Clear tokens and redirect to login
+			tokenService.clearTokens();
+			if (browser) {
+				window.location.href = '/auth/login';
+			}
+			return null;
+		}
+	}
+
+	/**
+	 * Handle token refresh with queue
+	 */
+	private async handleTokenRefresh(): Promise<string | null> {
+		if (!this.isRefreshing) {
+			this.isRefreshing = true;
+			const newToken = await this.refreshAccessToken();
+			this.isRefreshing = false;
+
+			// Notify all subscribers
+			this.refreshSubscribers.forEach((callback) => callback(newToken || ''));
+			this.refreshSubscribers = [];
+
+			return newToken;
+		}
+
+		// If already refreshing, wait for it to complete
+		return new Promise((resolve) => {
+			this.refreshSubscribers.push((token: string) => {
+				resolve(token);
+			});
+		});
+	}
+
+	/**
+	 * Make authenticated API request
+	 */
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+		// Check if token needs refresh before making request
+		if (tokenService.shouldRefreshToken()) {
+			console.log('Token expiring soon, refreshing...');
+			await this.handleTokenRefresh();
+		}
+
 		try {
 			const response = await fetch(`${API_BASE_URL}${url}`, {
-				credentials: 'include',
-				headers: {
-					'Content-Type': 'application/json',
-					...options.headers
-				},
+				headers: this.getAuthHeaders(),
 				...options
 			});
 
-			const contentType = response.headers.get('content-type');
-			let responseData;
+			// Handle 401 - Try to refresh token once
+			if (response.status === 401) {
+				console.log('Received 401, attempting token refresh...');
+				const newToken = await this.handleTokenRefresh();
 
-			if (response.status === 204) {
-				responseData = { message: 'Success', data: null };
-			} else if (contentType && contentType.includes('application/json')) {
-				responseData = await response.json();
-			} else {
-				responseData = await response.text();
-			}
+				if (newToken) {
+					// Retry request with new token
+					const retryResponse = await fetch(`${API_BASE_URL}${url}`, {
+						headers: this.getAuthHeaders(),
+						...options
+					});
 
-			if (!response.ok) {
-				// Handle authentication errors
-				if (response.status === 401) {
-					// Redirect to login if user is not authenticated
-					if (typeof window !== 'undefined') {
-						window.location.href = '/auth/login';
-					}
-					throw new Error('Authentication required');
+					return this.handleResponse<T>(retryResponse);
+				} else {
+					throw new Error('Authentication failed');
 				}
-
-				const errorMessage =
-					typeof responseData === 'object'
-						? responseData.message || `HTTP ${response.status}`
-						: responseData;
-				throw new Error(`API Error: ${response.status} - ${errorMessage}`);
 			}
 
-			return responseData;
+			return this.handleResponse<T>(response);
 		} catch (error) {
 			if (error instanceof TypeError && error.message.includes('fetch')) {
-				throw new Error('Network error - please check your connection', error);
+				throw new Error('Network error - please check your connection');
 			}
 			throw error;
 		}
 	}
 
-	// generate cover letter for manual mode
-	async generateTemplateCoverLetter(
-		category: string,
-		{ companyName, candidateName, position }: GenerateTemplateProps
-	): Promise<ApiResponse<string>> {
-		const encodedCategory = encodeURIComponent(category);
+	/**
+	 * Handle API response
+	 */
+	private async handleResponse<T>(response: Response): Promise<T> {
+		const contentType = response.headers.get('content-type');
+		let responseData;
 
-		const response = await fetch(
-			`${API_BASE_URL}/v1/cover-letters/generate/${encodedCategory}?candidateName=${candidateName}&companyName=${companyName}&position=${position}`,
-			{
-				credentials: 'include',
-				method: 'GET'
-			}
-		);
+		if (response.status === 204) {
+			responseData = { message: 'Success', data: null };
+		} else if (contentType && contentType.includes('application/json')) {
+			responseData = await response.json();
+		} else {
+			responseData = await response.text();
+		}
 
 		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}`);
+			if (response.status === 401) {
+				if (browser) {
+					tokenService.clearTokens();
+					window.location.href = '/auth/login';
+				}
+				throw new Error('Authentication required');
+			}
+
+			const errorMessage =
+				typeof responseData === 'object'
+					? responseData.message || `HTTP ${response.status}`
+					: responseData;
+			throw new Error(`API Error: ${response.status} - ${errorMessage}`);
 		}
-		return response.json();
+
+		return responseData;
 	}
 
-	// job description analysis
-	async analyseJobDescription(data: JobAnalysisRequest): Promise<ApiResponse<JobAnalysisResponse>> {
-		return this.makeRequest(`/v1/job-applications/analyze-application`, {
-			method: 'POST',
-			body: JSON.stringify(data)
+	// Auth endpoints
+	async getCurrentUser(): Promise<ApiResponse<any>> {
+		return this.makeRequest('/auth/me');
+	}
+
+	async logout(): Promise<ApiResponse<any>> {
+		const result = await this.makeRequest('/auth/logout', {
+			method: 'POST'
 		});
+		tokenService.clearTokens();
+		return result;
+	}
+
+	async checkAuth(): Promise<boolean> {
+		try {
+			if (!tokenService.hasTokens()) {
+				return false;
+			}
+			await this.getCurrentUser();
+			return true;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		} catch (error) {
+			return false;
+		}
 	}
 
 	// Profile Management
@@ -184,22 +298,25 @@ class ApiService {
 		summary: string,
 		skills: string[],
 		cvFile: File
-	): Promise<ApiResponse<ProfileResponse>> {
+	): Promise<ApiResponse<any>> {
 		const formData = new FormData();
 		formData.append('title', title);
 		formData.append('summary', summary);
 		formData.append('skills', JSON.stringify(skills));
 		formData.append('file', cvFile);
 
+		const token = tokenService.getAccessToken();
 		const response = await fetch(`${API_BASE_URL}/v1/profiles`, {
 			method: 'POST',
-			credentials: 'include',
+			headers: {
+				Authorization: `Bearer ${token}`
+			},
 			body: formData
 		});
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				if (typeof window !== 'undefined') {
+				if (browser) {
 					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
@@ -211,25 +328,15 @@ class ApiService {
 		return response.json();
 	}
 
-	async createProfile(profileData: ProfileCreateRequest): Promise<ApiResponse<ProfileResponse>> {
-		return this.makeRequest('/v1/profiles', {
-			method: 'POST',
-			body: JSON.stringify(profileData)
-		});
-	}
-
-	async getProfiles(): Promise<ApiResponse<ProfileResponse[]>> {
+	async getProfiles(): Promise<ApiResponse<any[]>> {
 		return this.makeRequest('/v1/profiles/me');
 	}
 
-	async getProfile(profileId: string): Promise<ApiResponse<ProfileResponse>> {
+	async getProfile(profileId: string): Promise<ApiResponse<any>> {
 		return this.makeRequest(`/v1/profiles/${profileId}`);
 	}
 
-	async updateProfile(
-		profileId: string,
-		profileData: Partial<ProfileCreateRequest>
-	): Promise<ApiResponse<ProfileResponse>> {
+	async updateProfile(profileId: string, profileData: any): Promise<ApiResponse<any>> {
 		return this.makeRequest(`/v1/profiles/${profileId}`, {
 			method: 'PATCH',
 			body: JSON.stringify(profileData)
@@ -248,15 +355,18 @@ class ApiService {
 		formData.append('file', file);
 		formData.append('profileId', profileId);
 
+		const token = tokenService.getAccessToken();
 		const response = await fetch(`${API_BASE_URL}/v1/cv/upload`, {
 			method: 'POST',
-			credentials: 'include',
+			headers: {
+				Authorization: `Bearer ${token}`
+			},
 			body: formData
 		});
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				if (typeof window !== 'undefined') {
+				if (browser) {
 					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
@@ -275,13 +385,16 @@ class ApiService {
 	}
 
 	async downloadCV(cvId: string): Promise<Blob> {
+		const token = tokenService.getAccessToken();
 		const response = await fetch(`${API_BASE_URL}/v1/cv/${cvId}/download`, {
-			credentials: 'include'
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
 		});
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				if (typeof window !== 'undefined') {
+				if (browser) {
 					window.location.href = '/auth/login';
 				}
 				throw new Error('Authentication required');
@@ -293,39 +406,48 @@ class ApiService {
 	}
 
 	// Job Applications
-	async sendJobApplication(applicationData: {
-		profileId: string;
-		jobEmail: string;
-		subject: string;
-		bodyText: string;
-		company: string;
-		jobTitle: string;
-	}): Promise<ApiResponse<any>> {
+	async sendJobApplication(applicationData: any): Promise<ApiResponse<any>> {
 		return this.makeRequest('/v1/job-applications/send', {
 			method: 'POST',
 			body: JSON.stringify(applicationData)
 		});
 	}
 
-	async getMyApplications(): Promise<ApiResponse<Application[]>> {
+	async getMyApplications(): Promise<ApiResponse<any[]>> {
 		return this.makeRequest('/v1/job-applications/me');
 	}
 
-	async updateApplicationStatus(
-		applicationId: string,
-		status: ApplicationStatus
-	): Promise<ApiResponse<Application>> {
+	async updateApplicationStatus(applicationId: string, status: string): Promise<ApiResponse<any>> {
 		return this.makeRequest(`/v1/job-applications/${applicationId}/status`, {
 			method: 'PATCH',
 			body: JSON.stringify(status)
 		});
 	}
 
-	// Auth & user mgmt
-	async getCurrentUser(): Promise<ApiResponse<any>> {
-		return this.makeRequest('/auth/me');
+	async analyseJobDescription(data: any): Promise<ApiResponse<any>> {
+		return this.makeRequest(`/v1/job-applications/analyze-application`, {
+			method: 'POST',
+			body: JSON.stringify(data)
+		});
 	}
 
+	async generateTemplateCoverLetter(category: string, props: any): Promise<ApiResponse<string>> {
+		const encodedCategory = encodeURIComponent(category);
+		const response = await fetch(
+			`${API_BASE_URL}/v1/cover-letters/generate/${encodedCategory}?candidateName=${props.candidateName}&companyName=${props.companyName}&position=${props.position}`,
+			{
+				method: 'GET',
+				headers: this.getAuthHeaders()
+			}
+		);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+		return response.json();
+	}
+
+	// User Management
 	async updateUserProfile(userData: {
 		firstName?: string;
 		lastName?: string;
@@ -340,22 +462,6 @@ class ApiService {
 		return this.makeRequest('/v1/users/me', {
 			method: 'DELETE'
 		});
-	}
-
-	async logout(): Promise<ApiResponse<any>> {
-		return this.makeRequest('/auth/logout', {
-			method: 'POST'
-		});
-	}
-
-	async checkAuth(): Promise<boolean> {
-		try {
-			await this.getCurrentUser();
-			return true;
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		} catch (error) {
-			return false;
-		}
 	}
 }
 
