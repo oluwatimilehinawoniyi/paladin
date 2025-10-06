@@ -4,7 +4,8 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { API_CONFIG } from "$lib/api/apiService";
+	import { API_CONFIG } from '$lib/api/apiService';
+	import { tokenService } from '$lib/services/tokenService';
 
 	let isLoading = $state(false);
 	let error = $state('');
@@ -21,18 +22,32 @@
 			window.history.replaceState({}, '', newUrl.toString());
 		}
 
-		// Check if user is already authenticated
-		try {
-			const response = await fetch(`${API_CONFIG.baseURL}/auth/me`, {
-				credentials: 'include'
-			});
+		// Check if user already has valid tokens
+		if (tokenService.hasTokens()) {
+			try {
+				const token = tokenService.getAccessToken();
+				const response = await fetch(`${API_CONFIG.baseURL}/auth/me`, {
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					}
+				});
 
-			if (response.ok) {
-				const redirectUrl = $page.url.searchParams.get('redirect') || '/app';
-				goto(redirectUrl);
-				return;
+				if (response.ok) {
+					console.log('User already authenticated, redirecting...');
+					const redirectUrl = $page.url.searchParams.get('redirect') || '/app';
+					goto(redirectUrl);
+					return;
+				} else {
+					// Token invalid, clear it
+					console.log('Token invalid, clearing...');
+					tokenService.clearTokens();
+				}
+			} catch (e) {
+				console.log('Auth check failed:', e);
+				tokenService.clearTokens();
 			}
-		} catch (e) {}
+		}
 
 		isCheckingAuth = false;
 	});
@@ -75,7 +90,7 @@
 		{
 			icon: Shield,
 			title: 'Secure Authentication',
-			description: 'OAuth2 security with no passwords to remember'
+			description: 'JWT security with no passwords to remember'
 		},
 		{
 			icon: CheckCircle,
@@ -136,32 +151,17 @@
 					<button
 						onclick={handleGoogleLogin}
 						disabled={isLoading}
-						class="group relative flex w-full items-center justify-center rounded-lg border-2 border-gray-300 bg-white px-4 py-4 text-lg font-medium text-gray-700 transition-all hover:border-[#ff4d00] hover:bg-gray-50 focus:ring-2 focus:ring-[#ff4d00] focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="group relative flex w-full items-center justify-center rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#ff4d00] hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{#if isLoading}
-							<svg
-								class="mr-3 -ml-1 h-6 w-6 animate-spin text-gray-700"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-							>
-								<circle
-									class="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									stroke-width="4"
-								></circle>
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-								></path>
-							</svg>
-							Connecting...
+							<div class="absolute left-4">
+								<div
+									class="h-5 w-5 animate-spin rounded-full border-2 border-[#ff4d00] border-t-transparent"
+								></div>
+							</div>
+							<span>Connecting to Google...</span>
 						{:else}
-							<svg class="mr-3 h-6 w-6" viewBox="0 0 24 24">
+							<svg class="absolute left-4 h-5 w-5" viewBox="0 0 24 24">
 								<path
 									fill="#4285F4"
 									d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -179,65 +179,39 @@
 									d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
 								/>
 							</svg>
-							Continue with Google
-							<ArrowRight class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+							<span>Continue with Google</span>
+							<ArrowRight class="absolute right-4 h-5 w-5 transition-transform group-hover:translate-x-1" />
 						{/if}
 					</button>
 				</div>
 
-				<!-- Security Note -->
-				<div class="mt-6 text-center">
-					<p class="text-sm text-gray-500">
-						🔒 Secure OAuth2 authentication - no passwords required
-					</p>
-				</div>
-
-				<!-- Back to home link -->
-				<div class="mt-8 text-center">
-					<a href="/" class="text-sm text-[#ff4d00] hover:text-[#ff4d00]/80 hover:underline">
-						← Back to home
-					</a>
-				</div>
+				<!-- Security notice -->
+				<p class="mt-4 text-center text-xs text-gray-500">
+					By continuing, you agree to Paladin's
+					<a href="/terms" class="text-[#ff4d00] hover:underline">Terms of Service</a>
+					and
+					<a href="/privacy" class="text-[#ff4d00] hover:underline">Privacy Policy</a>
+				</p>
 			</div>
 		</div>
 
-		<!-- Right Side - Features (hidden on mobile) -->
-		<div
-			class="relative hidden lg:flex lg:w-1/2 lg:flex-col lg:justify-center lg:bg-gradient-to-br lg:from-[#ff4d00] lg:to-orange-600"
-		>
-			<div class="absolute inset-0 bg-black/10"></div>
-			<div class="relative px-12 py-12 text-white">
-				<div class="mb-12">
-					<h3 class="text-3xl font-bold">Why choose Paladin?</h3>
-					<p class="mt-4 text-lg opacity-90">
-						The fastest way to land your dream job with AI-powered applications
-					</p>
-				</div>
-
-				<div class="space-y-8">
-					{#each features as { icon: Icon, title, description }}
-						<div class="flex items-start gap-4">
-							<div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
-								<Icon class="h-6 w-6" />
+		<!-- Right Side - Features (Hidden on mobile) -->
+		<div class="hidden bg-gray-50 lg:flex lg:w-1/2 lg:items-center lg:justify-center lg:p-12">
+			<div class="max-w-md">
+				<h3 class="mb-8 text-3xl font-bold text-gray-900">Why choose Paladin?</h3>
+				<div class="space-y-6">
+					{#each features as feature}
+						{@const Icon = feature.icon}
+						<div class="flex gap-4">
+							<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#ff4d00]/10">
+								<Icon class="h-6 w-6 text-[#ff4d00]" />
 							</div>
 							<div>
-								<h4 class="text-xl font-semibold">{title}</h4>
-								<p class="mt-1 opacity-90">{description}</p>
+								<h4 class="mb-1 font-semibold text-gray-900">{feature.title}</h4>
+								<p class="text-sm text-gray-600">{feature.description}</p>
 							</div>
 						</div>
 					{/each}
-				</div>
-
-				<!-- Stats -->
-				<div class="mt-12 grid grid-cols-2 gap-8">
-					<div>
-						<div class="text-3xl font-bold">85%</div>
-						<div class="text-sm opacity-90">Interview Success Rate</div>
-					</div>
-					<div>
-						<div class="text-3xl font-bold">10k+</div>
-						<div class="text-sm opacity-90">Applications Sent</div>
-					</div>
 				</div>
 			</div>
 		</div>

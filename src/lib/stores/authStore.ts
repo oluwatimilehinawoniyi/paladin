@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// src/lib/stores/authStore.ts (UPDATED for JWT)
+
 import { writable } from 'svelte/store';
 import { apiService, type User } from '$lib/api/apiService';
+import { tokenService } from '$lib/services/tokenService';
 import { browser } from '$app/environment';
 
 interface AuthState {
@@ -48,18 +50,36 @@ function createAuthStore() {
 				console.log('🔧 Initializing auth store...');
 				update((state) => ({ ...state, isLoading: true }));
 
+				// Check if tokens exist
+				if (!tokenService.hasTokens()) {
+					console.log('No tokens found');
+					set({
+						user: null,
+						isLoading: false,
+						isAuthenticated: false,
+						isInitialized: true
+					});
+					return;
+				}
+
+				// Verify tokens are valid by fetching user
 				const response = await apiService.getCurrentUser();
 				const user = response.data.user || response.data;
 
-				console.log('✅ Auth store initialized with user:', user.email);
+				console.log('Auth store initialized with user:', user.email);
 				set({
 					user,
 					isLoading: false,
 					isAuthenticated: true,
 					isInitialized: true
 				});
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
-				console.log('❌ Auth store init failed (user not authenticated)');
+				console.log('Auth store init failed (user not authenticated)');
+
+				// Clear invalid tokens
+				tokenService.clearTokens();
+
 				set({
 					user: null,
 					isLoading: false,
@@ -76,6 +96,9 @@ function createAuthStore() {
 			} catch (error) {
 				console.error('Logout error:', error);
 			} finally {
+				// Clear tokens from storage
+				tokenService.clearTokens();
+
 				set({
 					user: null,
 					isLoading: false,
@@ -102,7 +125,9 @@ function createAuthStore() {
 			return { success: true, data: response };
 		},
 
+		// Clear auth state
 		clear() {
+			tokenService.clearTokens();
 			set({
 				user: null,
 				isLoading: false,
