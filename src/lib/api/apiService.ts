@@ -214,6 +214,18 @@ class ApiService {
 	}
 
 	/**
+ * Public method to manually refresh token
+ * Used by background refresh hook
+ */
+async refreshToken(): Promise<void> {
+    const newToken = await this.handleTokenRefresh();
+    
+    if (!newToken) {
+        throw new Error('Token refresh failed');
+    }
+}
+
+	/**
 	 * Make authenticated API request
 	 */
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {

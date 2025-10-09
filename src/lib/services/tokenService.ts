@@ -2,6 +2,10 @@
 
 import { browser } from '$app/environment';
 
+/**
+ * Token Service
+ * Manages JWT access and refresh tokens in localStorage
+ */
 class TokenService {
 	private readonly ACCESS_TOKEN_KEY = 'paladin_access_token';
 	private readonly REFRESH_TOKEN_KEY = 'paladin_refresh_token';
@@ -50,7 +54,7 @@ class TokenService {
 	}
 
 	/**
-	 * clear all tokens from storage
+	 * Clear all tokens from storage
 	 */
 	clearTokens(): void {
 		if (!browser) return;
@@ -71,6 +75,9 @@ class TokenService {
 		return !!this.getAccessToken() && !!this.getRefreshToken();
 	}
 
+	/**
+	 * Decode JWT token to read payload
+	 */
 	decodeToken(token: string): any {
 		try {
 			const base64Url = token.split('.')[1];
@@ -89,7 +96,7 @@ class TokenService {
 	}
 
 	/**
-	 * check if token is expired
+	 * Check if token is expired
 	 */
 	isTokenExpired(token: string): boolean {
 		const decoded = this.decodeToken(token);
@@ -99,18 +106,53 @@ class TokenService {
 	}
 
 	/**
-	 * check if access token is expired or about to expire (within 1 minute)
+	 * Check if access token should be refreshed
+	 * @param minutesBeforeExpiry - Refresh if expires within this many minutes (default: 1)
+	 * @returns true if token should be refreshed
 	 */
-	shouldRefreshToken(): boolean {
+	shouldRefreshToken(minutesBeforeExpiry: number = 1): boolean {
 		const accessToken = this.getAccessToken();
 		if (!accessToken) return false;
 
 		const decoded = this.decodeToken(accessToken);
 		if (!decoded || !decoded.exp) return true;
 
-		// refresh if token expires in less than 1 minute
+		// Refresh if token expires within specified minutes
 		const expiresIn = decoded.exp * 1000 - Date.now();
-		return expiresIn < 60000;
+		const thresholdMs = minutesBeforeExpiry * 60 * 1000;
+
+		return expiresIn < thresholdMs;
+	}
+
+	/**
+	 * Get time until token expiration
+	 * @returns milliseconds until expiration, or 0 if expired/invalid
+	 */
+	getTimeUntilExpiration(): number {
+		const accessToken = this.getAccessToken();
+		if (!accessToken) return 0;
+
+		const decoded = this.decodeToken(accessToken);
+		if (!decoded || !decoded.exp) return 0;
+
+		const expiresIn = decoded.exp * 1000 - Date.now();
+		return expiresIn > 0 ? expiresIn : 0;
+	}
+
+	/**
+	 * Get user info from access token
+	 */
+	getUserFromToken(): { userId: string; email: string } | null {
+		const accessToken = this.getAccessToken();
+		if (!accessToken) return null;
+
+		const decoded = this.decodeToken(accessToken);
+		if (!decoded) return null;
+
+		return {
+			userId: decoded.userId || decoded.sub,
+			email: decoded.sub || decoded.email
+		};
 	}
 }
 

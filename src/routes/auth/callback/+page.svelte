@@ -10,16 +10,28 @@
 
 	onMount(async () => {
 		try {
-			// Extract tokens from URL query parameters
-			const urlParams = new URLSearchParams(window.location.search);
-			const accessToken = urlParams.get('accessToken');
-			const refreshToken = urlParams.get('refreshToken');
+			// Try to get tokens from BOTH hash and query params (supports both methods)
+			let accessToken: string | null = null;
+			let refreshToken: string | null = null;
+
+			// First, try hash params (mobile-friendly)
+			if (window.location.hash) {
+				const hash = window.location.hash.substring(1); // Remove #
+				const hashParams = new URLSearchParams(hash);
+				accessToken = hashParams.get('accessToken');
+				refreshToken = hashParams.get('refreshToken');
+			}
+
+			// Fallback to query params (desktop/backward compatibility)
+			if (!accessToken || !refreshToken) {
+				const urlParams = new URLSearchParams(window.location.search);
+				accessToken = urlParams.get('accessToken');
+				refreshToken = urlParams.get('refreshToken');
+			}
 
 			if (!accessToken || !refreshToken) {
 				throw new Error('No tokens received from OAuth');
 			}
-
-			console.log('✅ Tokens received from OAuth callback');
 
 			// Store tokens
 			tokenService.setTokens(accessToken, refreshToken);
@@ -34,7 +46,7 @@
 				status = 'success';
 				message = `Welcome ${currentStore.user.firstName}! Redirecting to your dashboard...`;
 
-				// Clean up URL by removing tokens
+				// Clean up URL
 				window.history.replaceState({}, document.title, window.location.pathname);
 
 				// Get redirect URL from sessionStorage or default to /app
