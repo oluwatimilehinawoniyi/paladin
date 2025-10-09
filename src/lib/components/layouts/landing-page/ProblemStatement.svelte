@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { twMerge } from 'tailwind-merge';
-	import {
-		Clock,
-		FileText,
-		BarChart3,
-		Target,
-		Brain
-	} from '@lucide/svelte';
+	import { Clock, FileText, BarChart3, Target, Brain, Users, Pickaxe, Files } from '@lucide/svelte';
 
 	// Props for customization
 	interface Props {
@@ -26,32 +20,34 @@
 	// Problems data - realistic job search pain points
 	const problems = [
 		{
-			icon: Clock,
-			title: 'Hours Per Application',
+			icon: Users,
+			title: 'Skill Set Juggling',
 			description:
-				'Writing unique cover letters and tailoring resumes takes 2-3 hours per application',
-			stat: '3 hours',
+				'You have 3+ different skill sets but only one resume. Applying to diverse roles means rewriting everything, every single time.',
+			stat: '3hrs+ fine-tuning a profile',
 			color: 'text-red-600 bg-red-50'
 		},
 		{
 			icon: FileText,
-			title: 'Application Chaos',
+			title: 'Application Amnesia',
 			description: 'Scattered applications across emails, spreadsheets, and multiple platforms',
 			stat: '67% lost track',
 			color: 'text-orange-600 bg-orange-50'
 		},
 		{
-			icon: BarChart3,
-			title: 'No Success Insights',
-			description: 'Zero visibility into what works, response rates, or optimization opportunities',
+			icon: Pickaxe,
+			title: ' Copy-Paste Exhaustion',
+			description:
+				'Tailoring cover letters for each role is necessary. Doing it 50 times manually is soul-crushing.',
 			stat: '0% visibility',
 			color: 'text-amber-600 bg-amber-50'
 		},
 		{
-			icon: Target,
-			title: 'Generic Applications',
-			description: 'One-size-fits-all approach leads to rejections and missed opportunities',
-			stat: '4% response rate',
+			icon: Files,
+			title: 'No Proper System',
+			description:
+				'Spreadsheets, emails, browser tabs. Your job search is scattered across 10 places and none of them talk to each other.',
+			stat: 'shooting blank shots',
 			color: 'text-rose-600 bg-rose-50'
 		}
 	];
@@ -72,7 +68,7 @@
 				)}
 			>
 				<Brain class="h-4 w-4" />
-				The Problem We Solve
+				The Real Problem
 			</div>
 
 			<h2
@@ -81,9 +77,9 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				Job searching shouldn't be
+				The job market wants you in a box.
 				<br />
-				<span class="text-slate-400">this complicated</span>
+				<span class="text-slate-400">But you don't fit in one.</span>
 			</h2>
 
 			<p
@@ -92,8 +88,9 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				Most job seekers waste hundreds of hours on repetitive tasks, lose track of applications,
-				and never know what's actually working. There has to be a better way.
+				You're a developer who also does design. A marketer with data skills. An engineer who can
+				write. Managing separate CVs, different cover letters, and tracking where you applied for
+				what? It's chaos.
 			</p>
 		</div>
 

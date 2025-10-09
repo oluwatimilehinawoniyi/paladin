@@ -125,7 +125,7 @@
 			)}
 		>
 			<TrendingUp class="h-4 w-4" />
-			Onboard & Succeed
+			Finally. Some relief?
 		</div>
 
 		<!-- Main Headline -->
@@ -138,7 +138,7 @@
 			<h1
 				class="text-center text-4xl leading-tight font-bold text-slate-900 lg:text-5xl xl:text-6xl"
 			>
-				Transform your career with AI-powered job applications.
+				You're more than one skill set. Your job search should reflect that.
 			</h1>
 		</div>
 
@@ -149,8 +149,9 @@
 				isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 			)}
 		>
-			Streamline your job search into a centralized command center. Track applications, generate
-			personalized cover letters, and land offers faster.
+			Manage multiple professional identities. Organize applications across different skills. Let AI
+			handle the cover letters while you stay in control of your narrative. Streamline your job
+			search into a centralized command center.
 		</p>
 
 		<div
@@ -163,7 +164,7 @@
 				href="/auth/login"
 				class="inline-flex items-center gap-2 rounded-lg bg-[#ff4d00] px-6 py-3 font-semibold text-white shadow-lg transition-all"
 			>
-				Start For Free
+				Start Organizing
 				<ArrowRight class="h-4 w-4" />
 			</a>
 		</div>
