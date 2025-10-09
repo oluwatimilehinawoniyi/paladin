@@ -8,13 +8,15 @@
 		Settings,
 		LogOut,
 		UserRoundPlus,
-		Loader2
+		Loader2,
+		Lightbulb
 	} from '@lucide/svelte';
 	import { page } from '$app/stores';
 	import logo from '$lib/assets/logo.png';
 	import Button from '../ui/Button.svelte';
 	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
+	import { modalStore } from '$lib/stores/modalStore';
 
 	let isOpen = $state(false);
 
@@ -99,6 +101,18 @@
 	async function handleLogout() {
 		await authStore.logout();
 	}
+
+	function handleRequestFeature() {
+		closeMenu(); // Close menu first
+		modalStore.open({
+			component: () => import('$lib/components/modals/RequestFeatureModal.svelte'),
+			options: {
+				size: 'md',
+				closeOnBackdrop: true,
+				closeOnEscape: true
+			}
+		});
+	}
 </script>
 
 <!-- Mobile Navbar - Only visible on mobile -->
@@ -180,8 +194,19 @@
 					</div>
 				</div>
 
+				<!-- Request Feature Button -->
+				<div class="border-t border-gray-200 px-4 py-4">
+					<button
+						onclick={handleRequestFeature}
+						class="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-700 transition-all hover:border-[#ff4d00] hover:bg-[#ff4d00]/5"
+					>
+						<Lightbulb class="size-5 text-[#ff4d00]" />
+						<span class="font-medium">Request a Feature</span>
+					</button>
+				</div>
+
 				<!-- User Section -->
-				<div class="space-y-4 border-t border-[#ff4d00]/30 py-4 px-4">
+				<div class="space-y-4 border-t border-[#ff4d00]/30 px-4 py-4">
 					<div class="flex items-center gap-4">
 						<div class="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
 							{#if isLoading && !isInitialized}

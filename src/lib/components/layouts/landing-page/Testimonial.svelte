@@ -16,60 +16,60 @@
 
 	// Success metrics data
 	const metrics = [
-		{
-			multiplier: '8X',
-			improvement: 'Faster applications',
-			description:
-				'Paladin users create personalized applications 8x faster than traditional methods, spending minutes instead of hours per application.',
-			color: true
-		},
-		{
-			multiplier: '3X',
-			improvement: 'Higher response rates',
-			description:
-				'AI-powered personalization leads to significantly higher callback rates compared to generic applications.',
-			color: false
-		}
-	];
+	{
+		multiplier: '3 min',
+		improvement: 'Per application',
+		description:
+			"Paladin cuts application time from 1-2 hours to about 3 minutes. AI drafts the cover letter, you tweak it, and you're done. Not magic—just removing the repetitive parts so you can focus on customization.",
+		color: true
+	},
+	{
+		multiplier: '0 chaos',
+		improvement: 'Better organization',
+		description:
+			'Track every application in one place. Which profile you used, which companies you applied to, what happened. No more "I think I applied here two weeks ago?" moments. Just clean, simple tracking.',
+		color: false
+	}
+];
 
 	const testimonials = [
 		{
 			name: 'Marcus Chen',
 			title: 'Software Engineer',
-			company: 'Google',
+			company: null,
 			avatar: '👨‍💻',
 			quote:
-				'Paladin helped me land my dream job at Google in just 3 weeks. The AI cover letters were so personalized that recruiters actually commented on them during interviews.',
+				'I code, but I also do DevOps and cloud architecture. Before Paladin, I was rewriting my entire CV for each role type. Now I just switch profiles. Saved me maybe 20 hours last month.',
 			highlight: false,
 			companyLogo: '🟢'
 		},
 		{
 			name: 'Sarah Rodriguez',
 			title: 'Product Manager',
-			company: 'Meta',
+			company: null,
 			avatar: '👩‍🚀',
 			quote:
-				"From career transition to job offer in 2 months. Paladin's multiple profiles feature let me target both PM and UX roles simultaneously. Incredible results!",
+				"The cover letter AI isn't perfect, but it gets me 70% there. I spend 10 minutes editing instead of an hour staring at a blank page. That's the win.",
 			highlight: true,
 			companyLogo: '🔵'
 		},
 		{
 			name: 'David Kim',
 			title: 'Data Scientist',
-			company: 'Netflix',
+			company:null,
 			avatar: '👨‍🔬',
 			quote:
-				'The analytics dashboard showed me exactly which applications were working. I optimized my approach and got 5 interviews in one week.',
+				"I have profiles for data science, analytics, and ML engineering. Paladin tracks which one I used where. Sounds simple, but it's the organization I needed.",
 			highlight: true,
 			companyLogo: '🔴'
 		},
 		{
 			name: 'Emma Thompson',
 			title: 'UX Designer',
-			company: 'Airbnb',
+			company: null,
 			avatar: '👩‍🎨',
 			quote:
-				'The job matching intelligence was game-changing. It highlighted exactly which skills I needed to add to my profile for better matches.',
+				"I was using Google Docs, Notion, and a spreadsheet. Now it's just... one place. Not revolutionary, just practical.",
 			highlight: false,
 			companyLogo: '🟡'
 		}
@@ -102,7 +102,7 @@
 				)}
 			>
 				<Quote class="h-4 w-4" />
-				TESTIMONIALS
+				Honest feedbacks
 			</div>
 
 			<h2
@@ -111,7 +111,7 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				Results that speak volumes
+				People who get it
 			</h2>
 
 			<p
@@ -120,7 +120,7 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				Read success stories
+				Paladin isn't magic. But it makes the grind a little less grinding.
 			</p>
 
 			<p
@@ -207,7 +207,8 @@
 								<div>
 									<div class="font-semibold text-slate-900">{testimonial.name}</div>
 									<div class="text-sm text-slate-500">
-										{testimonial.title}, {testimonial.company}
+										{testimonial.title}
+										<!-- , {testimonial.company} -->
 									</div>
 								</div>
 							</div>

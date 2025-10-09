@@ -20,31 +20,31 @@
 	// Features data - Paladin's core capabilities
 	const features = [
 		{
-			title: 'AI-powered cover letters',
+			title: 'Multiple professional profiles',
 			description:
-				'Generate personalized, compelling cover letters in seconds that match job requirements perfectly.',
-			icon: Brain,
-			bgColor: 'bg-blue-100',
-			iconColor: 'text-blue-600',
-			accentColor: 'from-blue-500 to-blue-600'
+				'Create separate profiles for different skill sets. Developer you. Designer you. Project manager you. All organized in one place.',
+			icon: Users,
+			bgColor: 'bg-purple-100',
+			iconColor: 'text-purple-600',
+			accentColor: 'from-purple-500 to-purple-600'
 		},
 		{
 			title: 'Smart application tracking',
 			description:
-				'Monitor all your applications, deadlines, and responses in one organized dashboard.',
+				'Track which profile you used for which job. Never lose track of where you applied or what version of yourself you presented.',
 			icon: BarChart3,
 			bgColor: 'bg-green-100',
 			iconColor: 'text-green-600',
 			accentColor: 'from-green-500 to-green-600'
 		},
 		{
-			title: 'Multiple professional profiles',
+			title: 'Cover Letter Assistance',
 			description:
-				'Create tailored profiles for different roles and industries with unlimited flexibility.',
-			icon: Users,
-			bgColor: 'bg-purple-100',
-			iconColor: 'text-purple-600',
-			accentColor: 'from-purple-500 to-purple-600'
+				'Generate personalized, compelling cover letters in seconds that match job requirements perfectly.',
+			icon: Brain,
+			bgColor: 'bg-blue-100',
+			iconColor: 'text-blue-600',
+			accentColor: 'from-blue-500 to-blue-600'
 		},
 		{
 			title: 'Job match intelligence',
@@ -56,17 +56,18 @@
 			accentColor: 'from-red-500 to-red-600'
 		},
 		{
-			title: 'Success rate analytics',
+			title: 'Success insights',
 			description:
-				'Understand what works with detailed insights on response rates and optimization tips.',
+				"Understand which skill sets are getting responses. Adjust your strategy based on what's actually working.",
 			icon: Zap,
 			bgColor: 'bg-yellow-100',
 			iconColor: 'text-yellow-600',
 			accentColor: 'from-yellow-500 to-yellow-600'
 		},
 		{
-			title: 'All-in-one platform',
-			description: 'Everything you need to accelerate your job search in one seamless experience.',
+			title: 'Application History',
+			description:
+				'See everything in one dashboard. Which jobs you applied to, when, with which profile, and what happened.',
 			icon: FileText,
 			bgColor: 'bg-cyan-100',
 			iconColor: 'text-cyan-600',
@@ -93,7 +94,7 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				EVERYTHING YOU NEED
+				What Paladin actually does
 			</div>
 
 			<!-- Main Headlines -->
@@ -104,7 +105,7 @@
 				)}
 			>
 				<h2 class="text-2xl leading-tight font-bold text-slate-900 lg:text-4xl xl:text-5xl">
-					The complete job search acceleration platform
+					Organize your skills. Track your applications. Let AI meet you halfway.
 				</h2>
 			</div>
 
@@ -115,8 +116,8 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				Powerful AI-driven platform for landing your dream job faster. Contains profile builder,
-				cover letter generator, application tracker, and success analytics.
+				Paladin doesn't replace you — it handles the repetitive parts so you can focus on the human
+				stuff. Your story. Your strategy. Your control.
 			</p>
 
 			<!-- CTA Button -->
@@ -126,12 +127,13 @@
 					isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 				)}
 			>
-				<button
+				<a
+					href="/auth/login"
 					class="inline-flex items-center gap-3 rounded-2xl bg-[#ff4d00] px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all"
 				>
 					START ACCELERATING
 					<ArrowRight class="h-5 w-5" />
-				</button>
+				</a>
 			</div>
 		</div>
 
