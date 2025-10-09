@@ -102,6 +102,30 @@ export interface Application {
 	status: ApplicationStatus;
 	sentAt: string;
 }
+
+export interface FeatureRequest {
+	id: string;
+	userId: string;
+	userEmail: string;
+	title: string;
+	description: string;
+	category: string;
+	categoryDisplayName: string;
+	status: string;
+	statusDisplayName: string;
+	adminResponse: string | null;
+	voteCount: number;
+	hasVoted: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CreateFeatureRequestDTO {
+	title: string;
+	description: string;
+	category: string;
+}
+
 class ApiService {
 	private isRefreshing = false;
 	private refreshSubscribers: Array<(token: string) => void> = [];
@@ -272,7 +296,7 @@ class ApiService {
 	}
 
 	async logout(): Promise<ApiResponse<any>> {
-		const result = await this.makeRequest('/auth/logout', {
+		const result = await this.makeRequest<any>('/auth/logout', {
 			method: 'POST'
 		});
 		tokenService.clearTokens();
@@ -286,7 +310,7 @@ class ApiService {
 			}
 			await this.getCurrentUser();
 			return true;
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			return false;
 		}
@@ -462,6 +486,71 @@ class ApiService {
 		return this.makeRequest('/v1/users/me', {
 			method: 'DELETE'
 		});
+	}
+
+	/**
+	 * Feature Request Management
+	 */
+
+	// Create a new feature request
+	async createFeatureRequest(data: CreateFeatureRequestDTO): Promise<ApiResponse<FeatureRequest>> {
+		return this.makeRequest('/v1/feature-requests', {
+			method: 'POST',
+			body: JSON.stringify(data)
+		});
+	}
+
+	// Get all feature requests
+	async getFeatureRequests(status?: string): Promise<ApiResponse<FeatureRequest[]>> {
+		const url = status ? `/v1/feature-requests?status=${status}` : '/v1/feature-requests';
+		return this.makeRequest(url);
+	}
+
+	// Get single feature request
+	async getFeatureRequest(id: string): Promise<ApiResponse<FeatureRequest>> {
+		return this.makeRequest(`/v1/feature-requests/${id}`);
+	}
+
+	// Get user's own feature requests
+	async getMyFeatureRequests(): Promise<ApiResponse<FeatureRequest[]>> {
+		return this.makeRequest('/v1/feature-requests/my-requests');
+	}
+
+	// Update feature request (only if PENDING)
+	async updateFeatureRequest(
+		id: string,
+		data: CreateFeatureRequestDTO
+	): Promise<ApiResponse<FeatureRequest>> {
+		return this.makeRequest(`/v1/feature-requests/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(data)
+		});
+	}
+
+	// Delete feature request (only if PENDING)
+	async deleteFeatureRequest(id: string): Promise<void> {
+		return this.makeRequest(`/v1/feature-requests/${id}`, {
+			method: 'DELETE'
+		});
+	}
+
+	// Upvote a feature request
+	async upvoteFeatureRequest(id: string): Promise<{ message: string; totalVotes: number }> {
+		return this.makeRequest(`/v1/feature-requests/${id}/upvote`, {
+			method: 'POST'
+		});
+	}
+
+	// Remove upvote
+	async removeUpvote(id: string): Promise<{ message: string; totalVotes: number }> {
+		return this.makeRequest(`/v1/feature-requests/${id}/upvote`, {
+			method: 'DELETE'
+		});
+	}
+
+	// Check if user has voted
+	async hasUserVoted(id: string): Promise<{ hasVoted: boolean }> {
+		return this.makeRequest(`/v1/feature-requests/${id}/my-vote`);
 	}
 }
 

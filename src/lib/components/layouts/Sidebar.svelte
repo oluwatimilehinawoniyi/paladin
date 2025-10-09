@@ -15,6 +15,7 @@
 	import { page } from '$app/stores';
 	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
+	import { modalStore } from '$lib/stores/modalStore';
 
 	const menuItems = [
 		{
@@ -53,6 +54,17 @@
 	async function handleLogout() {
 		await authStore.logout();
 	}
+
+	function handleRequestFeature() {
+		modalStore.open({
+			component: () => import('$lib/components/modals/RequestFeatureModal.svelte'),
+			options: {
+				size: 'lg',
+				closeOnBackdrop: true,
+				closeOnEscape: true
+			}
+		});
+	}
 </script>
 
 <section class="hidden h-screen w-[200px] flex-col justify-between bg-gray-50 p-4 md:flex">
@@ -78,11 +90,14 @@
 	</div>
 
 	<!-- REQUEST A FEATURE -->
-	<div class="flex h-36 flex-col items-center justify-between rounded-md bg-[#030000] p-3">
+	<div class="flex min-h-36 flex-col items-center justify-between rounded-md gap-4 bg-[#030000] p-3">
 		<p class="text-center text-sm font-medium text-white/80">
-			Is there something you'll love paladin to have/do for you?
+			Is there a feature you'll love paladin to have? We would love to hear your feedback.
 		</p>
-		<Button name="request a feature" classes="w-full text-xs font-normal" />
+		<Button 
+		onClick={handleRequestFeature} 
+		name="request a feature" 
+		classes="w-full text-xs font-normal" />
 	</div>
 
 	<!-- FOOTER -->

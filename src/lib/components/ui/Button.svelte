@@ -2,6 +2,7 @@
 	import { type Icon as IconType } from '@lucide/svelte';
 
 	interface Props {
+		type?: 'button' | 'submit' | 'reset' | null | undefined;
 		name: string;
 		icon?: typeof IconType;
 		classes?: string;
@@ -9,10 +10,11 @@
 		disabled?: boolean;
 	}
 
-	let { name, icon, classes = '', onClick, disabled }: Props = $props();
+	let { name, icon, type, classes = '', onClick, disabled }: Props = $props();
 </script>
 
 <button
+	{type}
 	class="flex w-fit min-w-fit cursor-pointer items-center justify-center gap-2 rounded-md bg-[#ff4d00] px-4 py-2 font-medium text-white capitalize {classes}"
 	onclick={onClick}
 	{disabled}
