@@ -4,8 +4,11 @@
 	import { onMount } from 'svelte';
 	import type { LayoutData } from './$types';
 	import { authStore } from '$lib/stores/authStore';
-
+	import { useTokenRefresh } from "$lib/hooks/useRefreshToken.svelte";
+	
 	export let data: LayoutData;
+
+	useTokenRefresh();
 
 	onMount(async () => {
 		if (data.user) {
