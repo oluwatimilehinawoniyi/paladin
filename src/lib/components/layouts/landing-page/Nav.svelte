@@ -1,5 +1,6 @@
 <script>
 	import { Play, ArrowRight } from '@lucide/svelte';
+	import logo from '$lib/assets/logo.png';
 </script>
 
 <!-- Navigation -->
@@ -7,12 +8,9 @@
 	<div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
 		<div class="flex h-16 items-center justify-between">
 			<!-- Logo -->
-			<div class="flex items-center gap-3">
-				<div
-					class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff4d00] to-orange-600 font-bold text-white"
-				>
-					P
-				</div>
+
+			<div class="flex items-center gap-2">
+				<img src={logo} alt="logo" class="size-6" />
 				<span class="text-xl font-bold text-slate-900">Paladin</span>
 			</div>
 
