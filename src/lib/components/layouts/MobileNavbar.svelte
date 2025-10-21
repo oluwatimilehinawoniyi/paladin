@@ -17,6 +17,7 @@
 	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
 	import { modalStore } from '$lib/stores/modalStore';
+	import NotificationBell from '../ui/NotificationBell.svelte';
 
 	let isOpen = $state(false);
 
@@ -125,17 +126,20 @@
 		</a>
 
 		<!-- Menu Button -->
-		<button
-			onclick={toggleMenu}
-			class="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-			aria-label="Toggle menu"
-		>
-			{#if isOpen}
-				<X class="size-6" />
-			{:else}
-				<Menu class="size-6" />
-			{/if}
-		</button>
+		<div class="flex items-center gap-2">
+			<NotificationBell />
+			<button
+				onclick={toggleMenu}
+				class="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+				aria-label="Toggle menu"
+			>
+				{#if isOpen}
+					<X class="size-6" />
+				{:else}
+					<Menu class="size-6" />
+				{/if}
+			</button>
+		</div>
 	</div>
 </nav>
 

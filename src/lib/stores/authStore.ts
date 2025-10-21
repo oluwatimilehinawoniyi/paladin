@@ -26,7 +26,6 @@ function createAuthStore() {
 
 		// Set user data directly (used by layout)
 		setUser(user: User) {
-			console.log('🔧 Setting user in auth store:', user.email);
 			set({
 				user,
 				isLoading: false,
@@ -42,17 +41,14 @@ function createAuthStore() {
 			// Don't initialize multiple times
 			const currentState = get(authStore);
 			if (currentState.isInitialized) {
-				console.log('🔧 Auth store already initialized, skipping');
 				return;
 			}
 
 			try {
-				console.log('🔧 Initializing auth store...');
 				update((state) => ({ ...state, isLoading: true }));
 
 				// Check if tokens exist
 				if (!tokenService.hasTokens()) {
-					console.log('No tokens found');
 					set({
 						user: null,
 						isLoading: false,
@@ -66,7 +62,6 @@ function createAuthStore() {
 				const response = await apiService.getCurrentUser();
 				const user = response.data.user || response.data;
 
-				console.log('Auth store initialized with user:', user.email);
 				set({
 					user,
 					isLoading: false,
@@ -75,8 +70,6 @@ function createAuthStore() {
 				});
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
-				console.log('Auth store init failed (user not authenticated)');
-
 				// Clear invalid tokens
 				tokenService.clearTokens();
 

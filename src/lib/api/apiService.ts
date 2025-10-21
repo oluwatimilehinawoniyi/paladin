@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { tokenService } from '$lib/services/tokenService';
 import { browser } from '$app/environment';
+import type { NotificationDTO, PaginatedResponse } from '$lib/types/notification.types';
 
 export const API_CONFIG = {
 	baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
@@ -11,6 +12,14 @@ export const API_CONFIG = {
 } as const;
 
 const API_BASE_URL = API_CONFIG.baseURL;
+
+export interface UnreadCountResponse {
+	count: number;
+}
+
+export interface MarkAsReadResponse {
+	message: string;
+}
 
 export interface ProfileCreateRequest {
 	title: string;
@@ -129,6 +138,21 @@ export interface CreateFeatureRequestDTO {
 class ApiService {
 	private isRefreshing = false;
 	private refreshSubscribers: Array<(token: string) => void> = [];
+	private refreshAttempts = 0;
+	private readonly MAX_REFRESH_ATTEMPTS = 3;
+
+	/**
+	 * Get base fetch configuration with proper CORS settings
+	 */
+	private getBaseFetchConfig(): RequestInit {
+		return {
+			mode: 'cors',
+			credentials: 'include',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		};
+	}
 
 	/**
 	 * Get Authorization header with JWT token
@@ -157,17 +181,36 @@ class ApiService {
 			return null;
 		}
 
+		if (this.refreshAttempts >= this.MAX_REFRESH_ATTEMPTS) {
+			console.error('Max refresh attempts exceeded');
+			this.refreshAttempts = 0;
+			return null;
+		}
+
+		this.refreshAttempts++;
+
 		try {
+			console.log(
+				`Attempting token refresh (attempt ${this.refreshAttempts}/${this.MAX_REFRESH_ATTEMPTS})...`
+			);
+
+			const baseFetchConfig = this.getBaseFetchConfig();
+
 			const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+				...baseFetchConfig,
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
 				body: JSON.stringify({ refreshToken })
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to refresh token');
+				console.error('❌ Token refresh failed with status:', response.status);
+
+				// Check if it's a CORS error
+				if (response.type === 'opaque' || response.status === 0) {
+					console.error('❌ CORS error detected during token refresh');
+				}
+
+				throw new Error(`Failed to refresh token: ${response.status}`);
 			}
 
 			const data = await response.json();
@@ -175,16 +218,29 @@ class ApiService {
 
 			// Store new tokens
 			tokenService.setTokens(accessToken, newRefreshToken);
+
+			this.refreshAttempts = 0;
+
 			console.log('Token refreshed successfully');
 
 			return accessToken;
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Token refresh failed:', error);
-			// Clear tokens and redirect to login
-			tokenService.clearTokens();
-			if (browser) {
-				window.location.href = '/auth/login';
+
+			if (error instanceof TypeError && error.message.includes('fetch')) {
+				console.error('Network/CORS error during token refresh');
 			}
+
+			if (this.refreshAttempts >= this.MAX_REFRESH_ATTEMPTS || error.message.includes('401')) {
+				console.error('Clearing tokens and redirecting to login');
+				tokenService.clearTokens();
+				this.refreshAttempts = 0;
+
+				if (browser) {
+					window.location.href = '/auth/login?session=expired';
+				}
+			}
+
 			return null;
 		}
 	}
@@ -193,52 +249,68 @@ class ApiService {
 	 * Handle token refresh with queue
 	 */
 	private async handleTokenRefresh(): Promise<string | null> {
-		if (!this.isRefreshing) {
-			this.isRefreshing = true;
-			const newToken = await this.refreshAccessToken();
-			this.isRefreshing = false;
-
-			// Notify all subscribers
-			this.refreshSubscribers.forEach((callback) => callback(newToken || ''));
-			this.refreshSubscribers = [];
-
-			return newToken;
+		// If already refreshing, wait for it to complete
+		if (this.isRefreshing) {
+			console.log('⏳ Token refresh already in progress, queuing request...');
+			return new Promise((resolve) => {
+				this.refreshSubscribers.push((token: string) => {
+					resolve(token || null);
+				});
+			});
 		}
 
-		// If already refreshing, wait for it to complete
-		return new Promise((resolve) => {
-			this.refreshSubscribers.push((token: string) => {
-				resolve(token);
-			});
-		});
+		// Start refresh process
+		this.isRefreshing = true;
+		console.log('🔄 Starting token refresh process...');
+
+		const newToken = await this.refreshAccessToken();
+
+		this.isRefreshing = false;
+
+		// Notify all subscribers (queued requests)
+		if (this.refreshSubscribers.length > 0) {
+			console.log(`📢 Notifying ${this.refreshSubscribers.length} queued requests...`);
+			this.refreshSubscribers.forEach((callback) => callback(newToken || ''));
+			this.refreshSubscribers = [];
+		}
+
+		return newToken;
 	}
 
 	/**
- * Public method to manually refresh token
- * Used by background refresh hook
- */
-async refreshToken(): Promise<void> {
-    const newToken = await this.handleTokenRefresh();
-    
-    if (!newToken) {
-        throw new Error('Token refresh failed');
-    }
-}
+	 * Public method to manually refresh token
+	 * Used by background refresh hook
+	 */
+	async refreshToken(): Promise<void> {
+		console.log('refreshing token');
+		const newToken = await this.handleTokenRefresh();
+
+		if (!newToken) {
+			throw new Error('Token refresh failed');
+		}
+	}
 
 	/**
 	 * Make authenticated API request
 	 */
 	private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
 		// Check if token needs refresh before making request
-		if (tokenService.shouldRefreshToken()) {
+		if (tokenService.shouldRefreshToken(10)) {
 			console.log('Token expiring soon, refreshing...');
 			await this.handleTokenRefresh();
 		}
 
 		try {
+			const baseFetchConfig = this.getBaseFetchConfig();
+
 			const response = await fetch(`${API_BASE_URL}${url}`, {
-				headers: this.getAuthHeaders(),
-				...options
+				...baseFetchConfig,
+				...options,
+				headers: {
+					...baseFetchConfig.headers,
+					...this.getAuthHeaders(),
+					...(options.headers || {})
+				}
 			});
 
 			// Handle 401 - Try to refresh token once
@@ -249,8 +321,13 @@ async refreshToken(): Promise<void> {
 				if (newToken) {
 					// Retry request with new token
 					const retryResponse = await fetch(`${API_BASE_URL}${url}`, {
-						headers: this.getAuthHeaders(),
-						...options
+						...baseFetchConfig,
+						...options,
+						headers: {
+							...baseFetchConfig.headers,
+							...this.getAuthHeaders(),
+							...(options.headers || {})
+						}
 					});
 
 					return this.handleResponse<T>(retryResponse);
@@ -260,10 +337,17 @@ async refreshToken(): Promise<void> {
 			}
 
 			return this.handleResponse<T>(response);
-		} catch (error) {
+		} catch (error: any) {
 			if (error instanceof TypeError && error.message.includes('fetch')) {
 				throw new Error('Network error - please check your connection');
 			}
+
+			// Handle CORS errors
+			if (error.message && error.message.toLowerCase().includes('cors')) {
+				console.error('CORS error detected:', error);
+				throw new Error('Connection error - please try again');
+			}
+
 			throw error;
 		}
 	}
@@ -287,34 +371,125 @@ async refreshToken(): Promise<void> {
 			if (response.status === 401) {
 				if (browser) {
 					tokenService.clearTokens();
-					window.location.href = '/auth/login';
+					window.location.href = '/auth/login?session=expired';
 				}
 				throw new Error('Authentication required');
 			}
 
 			const errorMessage =
 				typeof responseData === 'object'
-					? responseData.message || `HTTP ${response.status}`
-					: responseData;
-			throw new Error(`API Error: ${response.status} - ${errorMessage}`);
+					? responseData.message || responseData.error || 'Request failed'
+					: responseData || 'Request failed';
+
+			throw new Error(errorMessage);
 		}
 
-		return responseData;
+		return responseData as T;
+	}
+
+	// ==================== PUBLIC API METHODS ====================
+
+	/**
+	 * GET request
+	 */
+	async get<T>(url: string): Promise<T> {
+		return this.makeRequest<T>(url, { method: 'GET' });
+	}
+
+	/**
+	 * POST request
+	 */
+	async post<T>(url: string, data?: any): Promise<T> {
+		return this.makeRequest<T>(url, {
+			method: 'POST',
+			body: data ? JSON.stringify(data) : undefined
+		});
+	}
+
+	/**
+	 * PUT request
+	 */
+	async put<T>(url: string, data: any): Promise<T> {
+		return this.makeRequest<T>(url, {
+			method: 'PUT',
+			body: JSON.stringify(data)
+		});
+	}
+
+	/**
+	 * PATCH request
+	 */
+	async patch<T>(url: string, data: any): Promise<T> {
+		return this.makeRequest<T>(url, {
+			method: 'PATCH',
+			body: JSON.stringify(data)
+		});
+	}
+
+	/**
+	 * DELETE request
+	 */
+	async delete<T>(url: string): Promise<T> {
+		return this.makeRequest<T>(url, { method: 'DELETE' });
+	}
+
+	/**
+	 * Upload file with multipart/form-data
+	 */
+	async upload<T>(url: string, formData: FormData): Promise<T> {
+		const token = tokenService.getAccessToken();
+		const baseFetchConfig = this.getBaseFetchConfig();
+
+		try {
+			const response = await fetch(`${API_BASE_URL}${url}`, {
+				...baseFetchConfig,
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`
+				},
+				body: formData
+			});
+
+			// Handle 401
+			if (response.status === 401) {
+				const newToken = await this.handleTokenRefresh();
+				if (newToken) {
+					const retryResponse = await fetch(`${API_BASE_URL}${url}`, {
+						...baseFetchConfig,
+						method: 'POST',
+						headers: {
+							Authorization: `Bearer ${newToken}`
+						},
+						body: formData
+					});
+					return this.handleResponse<T>(retryResponse);
+				}
+			}
+
+			return this.handleResponse<T>(response);
+		} catch (error: any) {
+			if (error instanceof TypeError && error.message.includes('fetch')) {
+				throw new Error('Network error - please check your connection');
+			}
+			throw error;
+		}
 	}
 
 	// Auth endpoints
-	async getCurrentUser(): Promise<ApiResponse<any>> {
-		return this.makeRequest('/auth/me');
+	async getCurrentUser(): Promise<ApiResponse<{ user: User }>> {
+		return this.get<ApiResponse<{ user: User }>>('/auth/me');
 	}
 
-	async logout(): Promise<ApiResponse<any>> {
-		const result = await this.makeRequest<any>('/auth/logout', {
-			method: 'POST'
-		});
-		tokenService.clearTokens();
-		return result;
+	async logout(): Promise<void> {
+		try {
+			await this.post('/auth/logout');
+		} finally {
+			tokenService.clearTokens();
+			if (browser) {
+				window.location.href = '/auth/login';
+			}
+		}
 	}
-
 	async checkAuth(): Promise<boolean> {
 		try {
 			if (!tokenService.hasTokens()) {
@@ -364,61 +539,89 @@ async refreshToken(): Promise<void> {
 		return response.json();
 	}
 
-	async getProfiles(): Promise<ApiResponse<any[]>> {
-		return this.makeRequest('/v1/profiles/me');
+	// async createProfile(data: ProfileCreateRequest): Promise<ApiResponse<ProfileResponse>> {
+	// 	return this.post<ApiResponse<ProfileResponse>>('/profiles', data);
+	// }
+
+	async getProfiles(): Promise<ApiResponse<ProfileResponse[]>> {
+		return this.get<ApiResponse<ProfileResponse[]>>('/v1/profiles/me');
 	}
 
-	async getProfile(profileId: string): Promise<ApiResponse<any>> {
-		return this.makeRequest(`/v1/profiles/${profileId}`);
+	async getProfile(id: string): Promise<ApiResponse<ProfileResponse>> {
+		return this.get<ApiResponse<ProfileResponse>>(`/v1/profiles/${id}`);
 	}
 
-	async updateProfile(profileId: string, profileData: any): Promise<ApiResponse<any>> {
-		return this.makeRequest(`/v1/profiles/${profileId}`, {
-			method: 'PATCH',
-			body: JSON.stringify(profileData)
-		});
+	// async updateProfile(profileId: string, profileData: any): Promise<ApiResponse<any>> {
+	// 	return this.makeRequest(`/v1/profiles/${profileId}`, {
+	// 		method: 'PATCH',
+	// 		body: JSON.stringify(profileData)
+	// 	});
+	// }
+
+	async updateProfile(
+		id: string,
+		data: Partial<ProfileCreateRequest>
+	): Promise<ApiResponse<ProfileResponse>> {
+		return this.put<ApiResponse<ProfileResponse>>(`/v1/profiles/${id}`, data);
 	}
 
-	async deleteProfile(profileId: string): Promise<ApiResponse<string>> {
-		return this.makeRequest(`/v1/profiles/${profileId}`, {
-			method: 'DELETE'
-		});
+	async deleteProfile(id: string): Promise<void> {
+		await this.delete(`/v1/profiles/${id}`);
 	}
+
+	// async deleteProfile(profileId: string): Promise<ApiResponse<string>> {
+	// 	return this.makeRequest(`/v1/profiles/${profileId}`, {
+	// 		method: 'DELETE'
+	// 	});
+	// }
 
 	// CV Management
-	async uploadCV(file: File, profileId: string): Promise<ApiResponse<any>> {
+
+	async uploadCV(profileId: string, file: File): Promise<ApiResponse<any>> {
 		const formData = new FormData();
 		formData.append('file', file);
 		formData.append('profileId', profileId);
 
-		const token = tokenService.getAccessToken();
-		const response = await fetch(`${API_BASE_URL}/v1/cv/upload`, {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${token}`
-			},
-			body: formData
-		});
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				if (browser) {
-					window.location.href = '/auth/login';
-				}
-				throw new Error('Authentication required');
-			}
-			const error = await response.text();
-			throw new Error(`CV Upload Error: ${response.status} - ${error}`);
-		}
-
-		return response.json();
+		return this.upload<ApiResponse<any>>('/v1/cv/upload', formData);
 	}
 
-	async deleteCV(cvId: string): Promise<ApiResponse<string>> {
-		return this.makeRequest(`/v1/cv/${cvId}`, {
-			method: 'DELETE'
-		});
+	async deleteCV(cvId: string): Promise<void> {
+		await this.delete(`/v1/cv/${cvId}`);
 	}
+
+	// async uploadCV(file: File, profileId: string): Promise<ApiResponse<any>> {
+	// 	const formData = new FormData();
+	// 	formData.append('file', file);
+	// 	formData.append('profileId', profileId);
+
+	// 	const token = tokenService.getAccessToken();
+	// 	const response = await fetch(`${API_BASE_URL}/v1/cv/upload`, {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			Authorization: `Bearer ${token}`
+	// 		},
+	// 		body: formData
+	// 	});
+
+	// 	if (!response.ok) {
+	// 		if (response.status === 401) {
+	// 			if (browser) {
+	// 				window.location.href = '/auth/login';
+	// 			}
+	// 			throw new Error('Authentication required');
+	// 		}
+	// 		const error = await response.text();
+	// 		throw new Error(`CV Upload Error: ${response.status} - ${error}`);
+	// 	}
+
+	// 	return response.json();
+	// }
+
+	// async deleteCV(cvId: string): Promise<ApiResponse<string>> {
+	// 	return this.makeRequest(`/v1/cv/${cvId}`, {
+	// 		method: 'DELETE'
+	// 	});
+	// }
 
 	async downloadCV(cvId: string): Promise<Blob> {
 		const token = tokenService.getAccessToken();
@@ -505,18 +708,18 @@ async refreshToken(): Promise<void> {
 	 */
 
 	// Create a new feature request
-	async createFeatureRequest(data: CreateFeatureRequestDTO): Promise<ApiResponse<FeatureRequest>> {
-		return this.makeRequest('/v1/feature-requests', {
-			method: 'POST',
-			body: JSON.stringify(data)
-		});
-	}
+	// async createFeatureRequest(data: CreateFeatureRequestDTO): Promise<ApiResponse<FeatureRequest>> {
+	// 	return this.makeRequest('/v1/feature-requests', {
+	// 		method: 'POST',
+	// 		body: JSON.stringify(data)
+	// 	});
+	// }
 
-	// Get all feature requests
-	async getFeatureRequests(status?: string): Promise<ApiResponse<FeatureRequest[]>> {
-		const url = status ? `/v1/feature-requests?status=${status}` : '/v1/feature-requests';
-		return this.makeRequest(url);
-	}
+	// // Get all feature requests
+	// async getFeatureRequests(status?: string): Promise<ApiResponse<FeatureRequest[]>> {
+	// 	const url = status ? `/v1/feature-requests?status=${status}` : '/v1/feature-requests';
+	// 	return this.makeRequest(url);
+	// }
 
 	// Get single feature request
 	async getFeatureRequest(id: string): Promise<ApiResponse<FeatureRequest>> {
@@ -560,9 +763,76 @@ async refreshToken(): Promise<void> {
 		});
 	}
 
+	async getFeatureRequests(): Promise<ApiResponse<FeatureRequest[]>> {
+		return this.get<ApiResponse<FeatureRequest[]>>('/v1/feature-requests');
+	}
+
+	async createFeatureRequest(data: CreateFeatureRequestDTO): Promise<ApiResponse<FeatureRequest>> {
+		return this.post<ApiResponse<FeatureRequest>>('/v1/feature-requests', data);
+	}
+
+	async voteFeatureRequest(id: string): Promise<ApiResponse<FeatureRequest>> {
+		return this.post<ApiResponse<FeatureRequest>>(`/v1/feature-requests/${id}/upvote`);
+	}
+
+	async unvoteFeatureRequest(id: string): Promise<ApiResponse<FeatureRequest>> {
+		return this.delete<ApiResponse<FeatureRequest>>(`/v1/feature-requests/${id}/upvote`);
+	}
+
 	// Check if user has voted
 	async hasUserVoted(id: string): Promise<{ hasVoted: boolean }> {
 		return this.makeRequest(`/v1/feature-requests/${id}/my-vote`);
+	}
+
+	/**
+	 * ============================================
+	 * NOTIFICATION MANAGEMENT
+	 * ============================================
+	 */
+
+	/**
+	 * Get paginated notifications
+	 * @param page - Page number (0-indexed)
+	 * @param size - Number of items per page
+	 */
+	async getNotifications(
+		page: number = 0,
+		size: number = 20
+	): Promise<ApiResponse<PaginatedResponse<NotificationDTO>>> {
+		return this.makeRequest(`/v1/notifications?page=${page}&size=${size}`);
+	}
+
+	/**
+	 * Get only unread notifications
+	 */
+	async getUnreadNotifications(): Promise<ApiResponse<NotificationDTO[]>> {
+		return this.makeRequest('/v1/notifications/unread');
+	}
+
+	/**
+	 * Get unread notification count (for badge)
+	 */
+	async getUnreadNotificationCount(): Promise<ApiResponse<UnreadCountResponse>> {
+		return this.makeRequest('/v1/notifications/unread-count');
+	}
+
+	/**
+	 * Mark a single notification as read
+	 * @param id - Notification ID
+	 */
+	async markNotificationAsRead(id: string): Promise<ApiResponse<MarkAsReadResponse>> {
+		return this.makeRequest(`/v1/notifications/${id}/read`, {
+			method: 'PATCH'
+		});
+	}
+
+	/**
+	 * Mark all notifications as read
+	 */
+	async markAllNotificationsAsRead(): Promise<ApiResponse<MarkAsReadResponse>> {
+		return this.makeRequest('/v1/notifications/read-all', {
+			method: 'PATCH'
+		});
 	}
 }
 
