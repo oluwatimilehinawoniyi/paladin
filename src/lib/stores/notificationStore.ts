@@ -126,9 +126,14 @@ function createNotificationStore() {
 		const notification = currentNotifications.find((n) => n.id === notificationId);
 		if (!notification || notification.isRead) return;
 
-		// Optimistic update
+		// Store original state for rollback
 		const wasUnread = !notification.isRead;
-		notification.isRead = true;
+
+		// Optimistic update - CREATE NEW ARRAY instead of mutating
+		notifications.update((current) =>
+			current.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+		);
+
 		if (wasUnread && get(unreadCount) > 0) {
 			unreadCount.update((count) => count - 1);
 		}
@@ -138,8 +143,10 @@ function createNotificationStore() {
 			// Success - optimistic update already applied
 		} catch (err: any) {
 			console.error('[Store] Failed to mark as read:', err);
-			// Rollback on error
-			notification.isRead = false;
+			// Rollback on error - again, create new array
+			notifications.update((current) =>
+				current.map((n) => (n.id === notificationId ? { ...n, isRead: false } : n))
+			);
 			if (wasUnread) {
 				unreadCount.update((count) => count + 1);
 			}

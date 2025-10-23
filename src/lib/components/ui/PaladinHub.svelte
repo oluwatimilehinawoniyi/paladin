@@ -34,8 +34,6 @@
 
 		if (tabId === 'requests' && $allRequests.length === 0) {
 			notificationStore.fetchFeatureRequests();
-		} else if (tabId === 'my-requests' && $myRequests.length === 0) {
-			notificationStore.fetchMyFeatureRequests();
 		}
 	}
 </script>

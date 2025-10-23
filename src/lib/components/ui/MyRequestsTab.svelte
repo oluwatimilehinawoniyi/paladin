@@ -4,10 +4,16 @@
 	import { modalStore } from '$lib/stores/modalStore';
 	import { FeatureRequestStatus } from '$lib/types/notification.types';
 	import FeatureRequestCard from './FeatureRequestCard.svelte';
+	import { onMount } from "svelte";
 
-	const { myRequests: myRequestsStore, isLoadingMyRequests: isLoadingStore } = notificationStore;
+	const {
+		myRequests: myRequestsStore,
+		isLoadingMyRequests: isLoadingStore,
+		error: errorStore
+	} = notificationStore;
 	let myRequests = $derived($myRequestsStore);
 	let isLoading = $derived($isLoadingStore);
+	let error = $derived($errorStore);
 
 	function handleNewRequest() {
 		modalStore.open({
@@ -54,6 +60,12 @@
 			}
 		});
 	}
+
+	onMount(() => {
+		if ($myRequestsStore.length === 0) {
+			notificationStore.fetchMyFeatureRequests();
+		}
+	});
 </script>
 
 <div class="flex h-full flex-col">
@@ -74,7 +86,23 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto px-6 py-4">
-		{#if isLoading}
+		{#if error}
+			<div class="flex flex-col items-center justify-center py-16">
+				<div class="rounded-lg bg-red-50 p-6 text-center">
+					<h3 class="text-lg font-semibold text-red-900">Error Loading Requests</h3>
+					<p class="mt-2 text-sm text-red-600">{error}</p>
+					<button
+						onclick={() => {
+							notificationStore.clearError();
+							notificationStore.fetchMyFeatureRequests();
+						}}
+						class="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+					>
+						Retry
+					</button>
+				</div>
+			</div>
+		{:else if isLoading}
 			<div class="flex items-center justify-center py-16">
 				<Loader2 class="h-8 w-8 animate-spin text-gray-400" />
 			</div>

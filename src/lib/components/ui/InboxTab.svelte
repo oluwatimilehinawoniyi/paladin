@@ -23,13 +23,6 @@
 	async function handleLoadMore() {
 		await notificationStore.loadMoreNotifications();
 	}
-
-	const sections = [
-		{ key: 'today', title: 'Today', notifications: grouped.today },
-		{ key: 'yesterday', title: 'Yesterday', notifications: grouped.yesterday },
-		{ key: 'thisWeek', title: 'This Week', notifications: grouped.thisWeek },
-		{ key: 'older', title: 'Older', notifications: grouped.older }
-	];
 </script>
 
 <div class="flex h-full flex-col">
@@ -55,7 +48,12 @@
 				</p>
 			</div>
 		{:else}
-			{#each sections as section}
+			{#each [
+				{ key: 'today', title: 'Today', notifications: grouped.today },
+				{ key: 'yesterday', title: 'Yesterday', notifications: grouped.yesterday },
+				{ key: 'thisWeek', title: 'This Week', notifications: grouped.thisWeek },
+				{ key: 'older', title: 'Older', notifications: grouped.older }
+			] as section}
 				{#if section.notifications.length > 0}
 					<div class="px-6 py-4">
 						<h3 class="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
