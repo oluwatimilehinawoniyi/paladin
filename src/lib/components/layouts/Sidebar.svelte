@@ -7,7 +7,8 @@
 		Send,
 		Settings,
 		User,
-		Loader2
+		Loader2,
+		Bell
 	} from '@lucide/svelte';
 	import SidebarMenuItem from '../ui/SidebarMenuItem.svelte';
 	import logo from '$lib/assets/logo.png';
@@ -16,6 +17,7 @@
 	import { authStore } from '$lib/stores/authStore';
 	import { onMount } from 'svelte';
 	import { modalStore } from '$lib/stores/modalStore';
+	import NotificationBell from '../ui/NotificationBell.svelte';
 
 	const menuItems = [
 		{
@@ -70,11 +72,13 @@
 <section class="hidden h-screen w-[200px] flex-col justify-between bg-gray-50 p-4 md:flex">
 	<div class="flex flex-col gap-8">
 		<!-- HEADER -->
-		<div class="rounded">
-			<div class="flex items-center gap-2">
-				<img src={logo} alt="paladin's logo" class="size-8" />
-				<p class="text-3xl font-bold text-[#030000]">Paladin</p>
+		<div class="flex items-center justify-between gap-4 rounded">
+			<div class="flex items-center justify-center gap-1.5">
+				<img src={logo} alt="paladin's logo" class="size-6" />
+				<p class="text-2xl font-bold text-[#030000]">Paladin</p>
 			</div>
+
+			<NotificationBell />
 		</div>
 
 		<!-- CONTENT -->
@@ -86,18 +90,25 @@
 					($page.url.pathname === '/app' && item.id === '')}
 				<SidebarMenuItem {Icon} title={item.title} link={item.id} {isActive} />
 			{/each}
+
+			<div>
+				<!-- <NotificationBell /> -->
+			</div>
 		</div>
 	</div>
 
 	<!-- REQUEST A FEATURE -->
-	<div class="flex min-h-36 flex-col items-center justify-between rounded-md gap-4 bg-[#030000] p-3">
+	<div
+		class="flex min-h-36 flex-col items-center justify-between gap-4 rounded-md bg-[#030000] p-3"
+	>
 		<p class="text-center text-sm font-medium text-white/80">
 			Is there a feature you'll love paladin to have? We would love to hear your feedback.
 		</p>
-		<Button 
-		onClick={handleRequestFeature} 
-		name="request a feature" 
-		classes="w-full text-xs font-normal" />
+		<Button
+			onClick={handleRequestFeature}
+			name="request a feature"
+			classes="w-full text-xs font-normal"
+		/>
 	</div>
 
 	<!-- FOOTER -->
