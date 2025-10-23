@@ -53,7 +53,7 @@ function createNotificationStore() {
 	async function fetchUnreadCount(): Promise<void> {
 		try {
 			const response = await apiService.getUnreadNotificationCount();
-			unreadCount.set(response.data.count);
+			unreadCount.set(response.data.unreadCount);
 			lastBadgeFetch.set(new Date());
 		} catch (err: any) {
 			console.error('[Store] Failed to fetch unread count:', err);
@@ -113,10 +113,24 @@ function createNotificationStore() {
 	 * Update notification list from polling service
 	 */
 	function updateNotificationList(newNotifications: NotificationDTO[]): void {
-		notifications.set(newNotifications);
+		const current = get(notifications);
+
+		const currentMap = new Map(current.map((n) => [n.id, n]));
+
+		const merged = newNotifications.map((serverNotif) => {
+			const localNotif = currentMap.get(serverNotif.id);
+
+			if (localNotif && localNotif.isRead && !serverNotif.isRead) {
+				console.log(`[Store] Keeping local read status for ${serverNotif.id}`);
+				return { ...serverNotif, isRead: true };
+			}
+
+			return serverNotif;
+		});
+
+		notifications.set(merged);
 		lastNotificationsFetch.set(new Date());
 	}
-
 	/**
 	 * Mark single notification as read (optimistic update)
 	 */
@@ -128,6 +142,9 @@ function createNotificationStore() {
 
 		// Store original state for rollback
 		const wasUnread = !notification.isRead;
+
+		// PAUSE POLLING during this operation
+		notificationPollingService.stopListPolling();
 
 		// Optimistic update - CREATE NEW ARRAY instead of mutating
 		notifications.update((current) =>
@@ -143,7 +160,7 @@ function createNotificationStore() {
 			// Success - optimistic update already applied
 		} catch (err: any) {
 			console.error('[Store] Failed to mark as read:', err);
-			// Rollback on error - again, create new array
+			// Rollback on error
 			notifications.update((current) =>
 				current.map((n) => (n.id === notificationId ? { ...n, isRead: false } : n))
 			);
@@ -151,6 +168,11 @@ function createNotificationStore() {
 				unreadCount.update((count) => count + 1);
 			}
 			error.set(err.message || 'Failed to mark notification as read');
+		} finally {
+			// RESUME POLLING after a small delay
+			setTimeout(() => {
+				notificationPollingService.startListPolling();
+			}, 2000);
 		}
 	}
 
@@ -240,35 +262,60 @@ function createNotificationStore() {
 		// Find request in both lists
 		const currentAllRequests = get(allRequests);
 		const currentMyRequests = get(myRequests);
-		const allRequest = currentAllRequests.find((r) => r.id === requestId);
-		const myRequest = currentMyRequests.find((r) => r.id === requestId);
+		// const allRequest = currentAllRequests.find((r) => r.id === requestId);
+		// const myRequest = currentMyRequests.find((r) => r.id === requestId);
 
-		if (!allRequest && !myRequest) return;
+		const allRequestIndex = currentAllRequests.findIndex((r) => r.id === requestId);
+		const myRequestIndex = currentMyRequests.findIndex((r) => r.id === requestId);
 
+		if (allRequestIndex === -1 && myRequestIndex === -1) return;
 		// Optimistic update
-		if (allRequest) {
-			allRequest.hasVoted = true;
-			allRequest.voteCount += 1;
+		if (allRequestIndex !== -1) {
+			allRequests.update((requests) =>
+				requests.map((r, i) =>
+					i === allRequestIndex ? { ...r, hasVoted: true, voteCount: r.voteCount + 1 } : r
+				)
+			);
 		}
-		if (myRequest) {
-			myRequest.voteCount += 1;
+		if (myRequestIndex !== -1) {
+			myRequests.update((requests) =>
+				requests.map((r, i) => (i === myRequestIndex ? { ...r, voteCount: r.voteCount + 1 } : r))
+			);
 		}
 
 		try {
 			const response = await apiService.upvoteFeatureRequest(requestId);
 			// Update with actual count from server
-			if (allRequest) allRequest.voteCount = response.totalVotes;
-			if (myRequest) myRequest.voteCount = response.totalVotes;
+			if (allRequestIndex !== -1) {
+				allRequests.update((requests) =>
+					requests.map((r) => (r.id === requestId ? { ...r, voteCount: response.totalVotes } : r))
+				);
+			}
+			if (myRequestIndex !== -1) {
+				myRequests.update((requests) =>
+					requests.map((r) => (r.id === requestId ? { ...r, voteCount: response.totalVotes } : r))
+				);
+			}
 		} catch (err: any) {
 			console.error('[Store] Failed to upvote:', err);
 			// Rollback on error
-			if (allRequest) {
-				allRequest.hasVoted = false;
-				allRequest.voteCount -= 1;
+			if (allRequestIndex !== -1) {
+				allRequests.update((requests) =>
+					requests.map((r, i) =>
+						i === allRequestIndex
+							? { ...r, hasVoted: false, voteCount: Math.max(0, r.voteCount - 1) }
+							: r
+					)
+				);
 			}
-			if (myRequest) {
-				myRequest.voteCount -= 1;
+			if (myRequestIndex !== -1) {
+				myRequests.update((requests) =>
+					requests.map((r, i) =>
+						i === myRequestIndex ? { ...r, voteCount: Math.max(0, r.voteCount - 1) } : r
+					)
+				);
 			}
+
 			error.set(err.message || 'Failed to upvote request');
 		}
 	}
@@ -280,34 +327,56 @@ function createNotificationStore() {
 		// Find request in both lists
 		const currentAllRequests = get(allRequests);
 		const currentMyRequests = get(myRequests);
-		const allRequest = currentAllRequests.find((r) => r.id === requestId);
-		const myRequest = currentMyRequests.find((r) => r.id === requestId);
+		const allRequestIndex = currentAllRequests.findIndex((r) => r.id === requestId);
+		const myRequestIndex = currentMyRequests.findIndex((r) => r.id === requestId);
 
-		if (!allRequest && !myRequest) return;
+		if (allRequestIndex === -1 && myRequestIndex === -1) return;
 
-		// Optimistic update
-		if (allRequest) {
-			allRequest.hasVoted = false;
-			allRequest.voteCount = Math.max(0, allRequest.voteCount - 1);
+		// Optimistic update - CREATE NEW ARRAYS
+		if (allRequestIndex !== -1) {
+			allRequests.update((requests) =>
+				requests.map((r, i) =>
+					i === allRequestIndex
+						? { ...r, hasVoted: false, voteCount: Math.max(0, r.voteCount - 1) }
+						: r
+				)
+			);
 		}
-		if (myRequest) {
-			myRequest.voteCount = Math.max(0, myRequest.voteCount - 1);
+		if (myRequestIndex !== -1) {
+			myRequests.update((requests) =>
+				requests.map((r, i) =>
+					i === myRequestIndex ? { ...r, voteCount: Math.max(0, r.voteCount - 1) } : r
+				)
+			);
 		}
 
 		try {
 			const response = await apiService.removeUpvote(requestId);
 			// Update with actual count from server
-			if (allRequest) allRequest.voteCount = response.totalVotes;
-			if (myRequest) myRequest.voteCount = response.totalVotes;
+			if (allRequestIndex !== -1) {
+				allRequests.update((requests) =>
+					requests.map((r) => (r.id === requestId ? { ...r, voteCount: response.totalVotes } : r))
+				);
+			}
+			if (myRequestIndex !== -1) {
+				myRequests.update((requests) =>
+					requests.map((r) => (r.id === requestId ? { ...r, voteCount: response.totalVotes } : r))
+				);
+			}
 		} catch (err: any) {
 			console.error('[Store] Failed to remove upvote:', err);
 			// Rollback on error
-			if (allRequest) {
-				allRequest.hasVoted = true;
-				allRequest.voteCount += 1;
+			if (allRequestIndex !== -1) {
+				allRequests.update((requests) =>
+					requests.map((r, i) =>
+						i === allRequestIndex ? { ...r, hasVoted: true, voteCount: r.voteCount + 1 } : r
+					)
+				);
 			}
-			if (myRequest) {
-				myRequest.voteCount += 1;
+			if (myRequestIndex !== -1) {
+				myRequests.update((requests) =>
+					requests.map((r, i) => (i === myRequestIndex ? { ...r, voteCount: r.voteCount + 1 } : r))
+				);
 			}
 			error.set(err.message || 'Failed to remove upvote');
 		}

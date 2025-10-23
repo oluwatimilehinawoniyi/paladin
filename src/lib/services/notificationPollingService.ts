@@ -194,12 +194,11 @@ class NotificationPollingService {
 			this.badgeAbortController = new AbortController();
 
 			const response = await apiService.getUnreadNotificationCount();
-			const count = response.data.count;
+			const count = response.data.unreadCount;
 
 			// Emit event to listeners
 			this.emit('badge-update', { count });
 		} catch (error: any) {
-			// Ignore abort errors (user navigated away)
 			if (error.name === 'AbortError') return;
 
 			console.error('[Polling] Badge count error:', error);

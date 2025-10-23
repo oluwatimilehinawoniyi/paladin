@@ -14,7 +14,7 @@ export const API_CONFIG = {
 const API_BASE_URL = API_CONFIG.baseURL;
 
 export interface UnreadCountResponse {
-	count: number;
+	unreadCount: number;
 }
 
 export interface MarkAsReadResponse {

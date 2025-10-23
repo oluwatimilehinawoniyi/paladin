@@ -83,7 +83,17 @@
 			{/if}
 
 			<div class="min-w-0 flex-1">
-				<h4 class="font-semibold text-gray-900">{request.title}</h4>
+				<div class="flex items-center gap-2">
+					<h4 class="font-semibold text-gray-900">{request.title}</h4>
+					{#if request.adminResponse}
+						<span
+							class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700"
+						>
+							<MessageSquare class="size-2.5" />
+							Recieved a Response
+						</span>
+					{/if}
+				</div>
 				<p
 					class="mt-1 text-sm text-gray-600"
 					class:line-clamp-2={!isExpanded}
@@ -93,18 +103,24 @@
 				</p>
 
 				<div class="mt-3 flex flex-wrap items-center gap-2">
-					<span
-						class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium {statusColors.bg} {statusColors.text} {statusColors.border}"
-					>
-						{request.statusDisplayName}
-					</span>
-					<span
-						class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700"
-					>
-						{request.categoryDisplayName}
-					</span>
-					<span class="text-xs text-gray-500">by {request.userEmail}</span>
-					<span class="text-xs text-gray-500">{formatRelativeTime(request.createdAt)}</span>
+					<div class="text-xs">
+						<p class="inline">status:</p>
+						<p
+							class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium {statusColors.bg} {statusColors.text} {statusColors.border}"
+						>
+							{request.statusDisplayName}
+						</p>
+					</div>
+
+					<div class="text-xs">
+						<p class="inline">category:</p>
+						<p
+							class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 font-medium text-gray-700"
+						>
+							{request.categoryDisplayName}
+						</p>
+					</div>
+					<p class="text-xs text-gray-500">{formatRelativeTime(request.createdAt)}</p>
 				</div>
 
 				{#if request.adminResponse && isExpanded}

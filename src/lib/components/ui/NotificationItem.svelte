@@ -15,15 +15,28 @@
 	};
 
 	const Icon = iconMap[notification.type as NotificationType];
+	
+	let isProcessing = $state(false);
 
 	async function handleMarkAsRead() {
-		if (!notification.isRead) {
+		if (notification.isRead || isProcessing) return;
+		
+		isProcessing = true;
+		try {
 			await notificationStore.markAsRead(notification.id);
+		} catch (error) {
+			console.error('Failed to mark notification as read:', error);
+		} finally {
+			setTimeout(() => {
+				isProcessing = false;
+			}, 300);
 		}
 	}
 
 	function handleClick() {
-		handleMarkAsRead();
+		if (!isProcessing && !notification.isRead) {
+			handleMarkAsRead();
+		}
 	}
 </script>
 

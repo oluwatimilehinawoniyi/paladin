@@ -10,8 +10,7 @@
 		badgeText: badgeTextStore
 	} = notificationStore;
 	let unreadCount = $derived($unreadCountStore);
-	// let hasUnread = $derived($hasUnreadStore);
-	let hasUnread = true;
+	let hasUnread = $derived($hasUnreadStore);
 	let badgeText = $derived($badgeTextStore);
 
 	let previousCount = $state(0);
