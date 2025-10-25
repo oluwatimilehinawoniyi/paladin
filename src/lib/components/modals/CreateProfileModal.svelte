@@ -200,7 +200,7 @@
 
 			<!-- CV Upload -->
 			<div>
-				<label for="cv-upload" class="mb-1 block text-sm font-medium text-gray-700"> Upload CV (Optional) </label>
+				<label for="cv-upload" class="mb-1 block text-sm font-medium text-gray-700"> Upload CV </label>
 
 				{#if cvFile}
 					<!-- File Preview -->
@@ -244,6 +244,7 @@
 							bind:this={fileInput}
 							onchange={handleFileSelect}
 							accept=".pdf,.doc,.docx"
+							required
 							disabled={isSubmitting}
 							class="hidden"
 						/>
