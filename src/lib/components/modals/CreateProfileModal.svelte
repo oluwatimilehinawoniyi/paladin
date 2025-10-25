@@ -200,7 +200,7 @@
 
 			<!-- CV Upload -->
 			<div>
-				<label for="cv-upload" class="mb-1 block text-sm font-medium text-gray-700"> Upload CV </label>
+				<label for="cv-upload" class="mb-1 block text-sm font-medium text-gray-700"> Upload CV  <span class="text-red-500">*</span></label>
 
 				{#if cvFile}
 					<!-- File Preview -->
