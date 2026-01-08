@@ -28,8 +28,6 @@
 	let isSendingApplication = $state(false);
 	let isAnalyzingJD = $state(false);
 	let isGeneratingCoverLetter = $state(false);
-	let error = $state('');
-	let successMessage = $state('');
 
 	// Mode state
 	let isSmartMode = $state(true); // true = JD-powered, false = manual
@@ -67,6 +65,16 @@
 		selectedProfileId && (isSmartMode ? jdAnalyzed && jobDetails?.coverLetter : selectedCategory)
 	);
 
+	let generateButtonTooltip = $derived(
+		!selectedProfileId
+			? 'Select a profile first'
+			: isSmartMode && !jdAnalyzed
+				? 'Analyze job description first'
+				: !isSmartMode && !selectedCategory
+					? 'Select a tone first'
+					: 'Generate Cover Letter'
+	);
+
 	// Variable detection for cover letter validation
 	function getUnfilledVariables(text: string): string[] {
 		const matches = text.match(/\[([^\]]+)\]/g);
@@ -75,7 +83,25 @@
 
 	let unfilledVariables = $derived(getUnfilledVariables(coverLetter));
 	let unfilledCount = $derived(unfilledVariables.length);
-	let canSendApplication = $derived(unfilledCount === 0 && coverLetter.trim().length > 0);
+	
+	// Check if all required fields are filled
+	let isFormReady = $derived(
+		selectedProfileId && 
+		jobEmail.trim() && 
+		applicationSubject.trim() && 
+		coverLetter.trim().length > 0
+	);
+
+	let canSendApplication = $derived(isFormReady && unfilledCount === 0);
+
+	let sendButtonTooltip = $derived(
+		!selectedProfileId ? 'Select a profile' :
+		!jobEmail.trim() ? 'Enter job email' :
+		!applicationSubject.trim() ? 'Enter subject' :
+		!coverLetter.trim() ? 'Generate or write a cover letter' :
+		unfilledCount > 0 ? `Fill ${unfilledCount} remaining variable${unfilledCount > 1 ? 's' : ''}` :
+		'Send Application'
+	);
 
 	// Load profiles on mount
 	onMount(async () => {
@@ -85,7 +111,7 @@
 	async function loadProfiles() {
 		try {
 			isLoadingProfiles = true;
-			error = '';
+			// error = '';
 			const response = await apiService.getProfiles();
 
 			if (Array.isArray(response.data)) {
@@ -95,7 +121,7 @@
 			}
 		} catch (err) {
 			console.error('Failed to load profiles:', err);
-			error = `Failed to load profiles: ${err instanceof Error ? err.message : String(err)}`;
+			toastStore.add(`Failed to load profiles: ${err instanceof Error ? err.message : String(err)}`, 'error');
 		} finally {
 			isLoadingProfiles = false;
 		}
@@ -104,25 +130,22 @@
 	// Toggle between Smart Mode and Manual Mode
 	function toggleMode() {
 		isSmartMode = !isSmartMode;
-		resetForm();
+		resetJobData();
 	}
 
 	// AI-powered JD Analysis
 	async function analyzeJobDescription() {
 		if (!jobDescription.trim()) {
-			error = 'Please provide a job description.';
-			toastStore.add(error, 'error');
+			toastStore.add('Please provide a job description.', 'error');
 			return;
 		}
 
 		if (!selectedProfileId) {
-			error = 'Please select a profile first.';
-			toastStore.add(error, 'error');
+			toastStore.add('Please select a profile.', 'error');
 			return;
 		}
 
 		isAnalyzingJD = true;
-		error = '';
 
 		try {
 			const result = await jobAnalysisStore.analyzeJobDescription(
@@ -141,7 +164,6 @@
 		} catch (err) {
 			console.error('Failed to analyze job description:', err);
 			const message = err instanceof Error ? err.message : 'Failed to analyze job description';
-			error = message;
 			toastStore.add(message, 'error');
 		} finally {
 			isAnalyzingJD = false;
@@ -151,19 +173,17 @@
 	// Unified Cover Letter Generation
 	async function generateCoverLetter() {
 		if (!selectedProfileId) {
-			error = 'Please select a profile first.';
+			toastStore.add('Please select a profile.', 'error');
 			return;
 		}
 
 		isGeneratingCoverLetter = true;
-		error = '';
 
 		try {
 			if (isSmartMode) {
 				// Smart Mode: Use AI-generated cover letter from job analysis
 				if (jdAnalyzed && jobDetails?.coverLetter) {
 					setTimeout(() => {
-						coverLetter = formatCoverLetter(jobDetails.coverLetter);
 						coverLetter = formatCoverLetter(jobDetails.coverLetter);
 						toastStore.add('AI-generated cover letter ready!', 'success');
 						isGeneratingCoverLetter = false;
@@ -196,9 +216,8 @@
 			}
 		} catch (err) {
 			console.error('Failed to generate cover letter:', err);
-			console.error('Failed to generate cover letter:', err);
-			error = err instanceof Error ? err.message : 'Failed to generate cover letter';
-			toastStore.add(error, 'error');
+			const errMessage = err instanceof Error ? err.message : 'Failed to generate cover letter';
+			toastStore.add(errMessage, 'error');
 		} finally {
 			if (!isSmartMode) {
 				isGeneratingCoverLetter = false;
@@ -208,8 +227,7 @@
 
 	async function handleSendApplication() {
 		if (!validateForm()) return;
-
-		error = '';
+		
 		isSendingApplication = true;
 
 		try {
@@ -248,19 +266,15 @@
 			}, 500);
 
 			setTimeout(() => {
-				resetForm();
-			}, 1000);
-
-			setTimeout(() => {
-				resetForm();
+				resetJobData();
 			}, 1000);
 
 			toastStore.add('Application sent successfully!', 'success');
 		} catch (err) {
 			console.error('Failed to send application:', err);
 			console.error('Failed to send application:', err);
-			error = `Failed to send application: ${err instanceof Error ? err.message : String(err)}`;
-			toastStore.add(error, 'error');
+			const errMessage = `Failed to send application: ${err instanceof Error ? err.message : String(err)}`;
+			toastStore.add(errMessage, 'error');
 		} finally {
 			isSendingApplication = false;
 		}
@@ -268,55 +282,43 @@
 
 	function validateForm(): boolean {
 		if (!selectedProfileId) {
-			error = 'Please select a profile.';
+			toastStore.add('Please select a profile.', 'error');
 			return false;
 		}
 
 		if (!jobEmail.trim()) {
-			error = 'Please provide a job contact email.';
+			toastStore.add('Please provide a job contact email.', 'error');
 			return false;
 		}
 
 		if (!applicationSubject.trim()) {
-			error = 'Please provide an application subject.';
+			toastStore.add('Please provide an application subject.', 'error');
 			return false;
 		}
 
 		if (!coverLetter.trim()) {
-			error = 'Please generate or write a cover letter.';
+			toastStore.add('Please generate or write a cover letter.', 'error');
 			return false;
 		}
 
 		return true;
 	}
 
-	function resetForm() {
-		jobDescription = '';
-		jobEmail = '';
+	function resetJobData() {
 		selectedProfileId = '';
 		selectedCategory = '';
+		jobDescription = '';
+		jobEmail = '';
 		applicationSubject = '';
 		coverLetter = '';
 		companyName = '';
 		jobTitle = '';
-		error = '';
-		successMessage = '';
 		jdAnalyzed = false;
 
-		// Reset the store data
 		jobAnalysisStore.reset();
 	}
 
-	// Clear messages after 5 seconds
-	$effect(() => {
-		if (error || successMessage) {
-			// const timer = setTimeout(() => {
-			// 	error = '';
-			// 	successMessage = '';
-			// }, 5000);
-			// return () => clearTimeout(timer);
-		}
-	});
+
 </script>
 
 <section class="flex h-full w-full flex-col gap-6 overflow-hidden p-4 lg:h-screen">
@@ -348,19 +350,7 @@
 	</div>
 
 	<!-- Success/Error Messages -->
-	{#if successMessage}
-		<div class="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3">
-			<Check class="h-5 w-5 text-green-600" />
-			<p class="text-sm text-green-800">{successMessage}</p>
-		</div>
-	{/if}
 
-	{#if error}
-		<div class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
-			<AlertCircle class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
-			<p class="text-sm text-red-800">{error}</p>
-		</div>
-	{/if}
 
 	<div class="custom-scrollbar flex-1 space-y-8 overflow-y-auto pb-">
 		<!-- Loading Profiles -->
@@ -473,7 +463,7 @@
 										name={isAnalyzingJD ? 'Analyzing...' : 'Analyze Job Description'}
 										icon={isAnalyzingJD ? Loader2 : Zap}
 										onClick={analyzeJobDescription}
-										disabled={!jobDescription.trim() || !selectedProfileId || isAnalyzingJD}
+										disabled={isAnalyzingJD}
 										classes="w-full justify-center {isAnalyzingJD ? 'animate-pulse' : ''}"
 									/>
 								{:else}
@@ -506,10 +496,7 @@
 										</div>
 
 										<button
-											onclick={() => {
-												jdAnalyzed = false;
-												resetForm();
-											}}
+											onclick={resetJobData}
 											class="mt-3 text-xs text-green-700 underline hover:text-green-800"
 										>
 											Re-analyze different job
@@ -616,15 +603,15 @@
 							</div>
 
 							<!-- Single Generate Button -->
-							{#if canGenerateCoverLetter}
+							<div title={generateButtonTooltip}>
 								<Button
 									name={isGeneratingCoverLetter ? 'Generating...' : 'Generate'}
 									icon={isGeneratingCoverLetter ? Loader2 : Wand2}
 									onClick={generateCoverLetter}
 									disabled={isGeneratingCoverLetter}
-									classes="text-sm {isGeneratingCoverLetter ? 'animate-pulse' : ''}"
+									classes="text-sm {isGeneratingCoverLetter ? 'animate-pulse' : ''} {isGeneratingCoverLetter ? 'opacity-50 cursor-not-allowed' : ''}"
 								/>
-							{/if}
+							</div>
 						</div>
 
 						<!-- Manual Mode: Cover Letter Category Selection -->
@@ -699,23 +686,17 @@
 						</div>
 
 						<!-- Send Application Button -->
-						<Button
-							name={isSendingApplication ? 'Sending...' : 'Send Application'}
-							icon={Send}
-							onClick={canSendApplication
-								? handleSendApplication
-								: () => {
-										if (unfilledCount > 0) {
-											error = `Please fill in the remaining ${unfilledCount} variable${unfilledCount > 1 ? 's' : ''} in your cover letter before sending.`;
-										} else {
-											error = 'Please generate a cover letter first.';
-										}
-									}}
-							disabled={isSendingApplication}
-							classes="w-full justify-center {isSendingApplication
-								? 'opacity-50 cursor-not-allowed bg-gray-400'
-								: ''}"
-						/>
+						<div title={sendButtonTooltip}>
+							<Button
+								name={isSendingApplication ? 'Sending...' : 'Send Application'}
+								icon={Send}
+								onClick={handleSendApplication}
+								disabled={isSendingApplication}
+								classes="w-full justify-center {isSendingApplication
+									? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400'
+									: ''}"
+							/>
+						</div>
 					</div>
 				</div>
 			</div>
