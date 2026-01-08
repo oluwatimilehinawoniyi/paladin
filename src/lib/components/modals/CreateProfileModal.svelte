@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { modalStore } from '$lib/stores/modalStore';
 	import { profilesStore } from '$lib/stores/profilesStore';
-	import { Upload, X, AlertCircle, Check } from '@lucide/svelte';
+	import { toastStore } from '$lib/stores/toastStore';
+	import { Upload, X } from '@lucide/svelte';
 
 	const { onSuccess, modalId } = $props<{
 		onSuccess?: () => void;
@@ -15,8 +16,8 @@
 	let fileInput = $state<HTMLInputElement | null>(null);
 
 	let isSubmitting = $state(false);
-	let error = $state('');
-	let successMessage = $state('');
+	// let error = $state('');
+	// let successMessage = $state('');
 
 	let skills = $derived(
 		skillsInput
@@ -39,18 +40,17 @@
 				'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 			];
 			if (!allowedTypes.includes(file.type)) {
-				error = 'Please upload a PDF or Word document';
+				toastStore.add('Please upload a PDF or Word document', 'error');
 				return;
 			}
 
 			// Validate file size (5MB limit)
 			if (file.size > 5 * 1024 * 1024) {
-				error = 'File size must be less than 5MB';
+				toastStore.add('File size must be less than 5MB', 'error');
 				return;
 			}
 
 			cvFile = file;
-			error = '';
 		}
 	}
 
@@ -65,8 +65,7 @@
 		if (!isFormValid) return;
 
 		isSubmitting = true;
-		error = '';
-		successMessage = '';
+		isSubmitting = true;
 
 		try {
 			await profilesStore.createProfile({
@@ -76,7 +75,7 @@
 				cvFile: cvFile || undefined
 			});
 
-			successMessage = 'Profile created successfully!';
+			toastStore.add('Profile created successfully!', 'success');
 
 			// Call success callback
 			if (onSuccess) {
@@ -89,7 +88,8 @@
 			}, 1500);
 		} catch (err) {
 			console.error('Failed to create profile:', err);
-			error = err instanceof Error ? err.message : 'Failed to create profile';
+			const message = err instanceof Error ? err.message : 'Failed to create profile';
+			toastStore.add(message, 'error');
 		} finally {
 			isSubmitting = false;
 		}
@@ -118,20 +118,7 @@
 	<!-- Content -->
 	<div class="space-y-6 p-4">
 		<!-- Success Message -->
-		{#if successMessage}
-			<div class="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3">
-				<Check class="h-5 w-5 text-green-600" />
-				<p class="text-sm text-green-800">{successMessage}</p>
-			</div>
-		{/if}
 
-		<!-- Error Message -->
-		{#if error}
-			<div class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
-				<AlertCircle class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
-				<p class="text-sm text-red-800">{error}</p>
-			</div>
-		{/if}
 
 		<!-- Form -->
 		<form

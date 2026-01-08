@@ -164,7 +164,8 @@
 				if (jdAnalyzed && jobDetails?.coverLetter) {
 					setTimeout(() => {
 						coverLetter = formatCoverLetter(jobDetails.coverLetter);
-						successMessage = 'AI-generated cover letter ready!';
+						coverLetter = formatCoverLetter(jobDetails.coverLetter);
+						toastStore.add('AI-generated cover letter ready!', 'success');
 						isGeneratingCoverLetter = false;
 					}, 500);
 				} else {
@@ -190,12 +191,14 @@
 
 				if (response.data) {
 					coverLetter = formatCoverLetter(response.data);
-					successMessage = 'Template-based cover letter generated successfully!';
+					toastStore.add('Template-based cover letter generated successfully!', 'success');
 				}
 			}
 		} catch (err) {
 			console.error('Failed to generate cover letter:', err);
+			console.error('Failed to generate cover letter:', err);
 			error = err instanceof Error ? err.message : 'Failed to generate cover letter';
+			toastStore.add(error, 'error');
 		} finally {
 			if (!isSmartMode) {
 				isGeneratingCoverLetter = false;
@@ -248,10 +251,16 @@
 				resetForm();
 			}, 1000);
 
-			successMessage = 'Application sent successfully!';
+			setTimeout(() => {
+				resetForm();
+			}, 1000);
+
+			toastStore.add('Application sent successfully!', 'success');
 		} catch (err) {
 			console.error('Failed to send application:', err);
+			console.error('Failed to send application:', err);
 			error = `Failed to send application: ${err instanceof Error ? err.message : String(err)}`;
+			toastStore.add(error, 'error');
 		} finally {
 			isSendingApplication = false;
 		}
@@ -301,11 +310,11 @@
 	// Clear messages after 5 seconds
 	$effect(() => {
 		if (error || successMessage) {
-			const timer = setTimeout(() => {
-				error = '';
-				successMessage = '';
-			}, 5000);
-			return () => clearTimeout(timer);
+			// const timer = setTimeout(() => {
+			// 	error = '';
+			// 	successMessage = '';
+			// }, 5000);
+			// return () => clearTimeout(timer);
 		}
 	});
 </script>
