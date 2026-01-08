@@ -562,7 +562,7 @@ class ApiService {
 		id: string,
 		data: Partial<ProfileCreateRequest>
 	): Promise<ApiResponse<ProfileResponse>> {
-		return this.put<ApiResponse<ProfileResponse>>(`/v1/profiles/${id}`, data);
+		return this.patch<ApiResponse<ProfileResponse>>(`/v1/profiles/${id}`, data);
 	}
 
 	async deleteProfile(id: string): Promise<void> {
@@ -588,40 +588,6 @@ class ApiService {
 	async deleteCV(cvId: string): Promise<void> {
 		await this.delete(`/v1/cv/${cvId}`);
 	}
-
-	// async uploadCV(file: File, profileId: string): Promise<ApiResponse<any>> {
-	// 	const formData = new FormData();
-	// 	formData.append('file', file);
-	// 	formData.append('profileId', profileId);
-
-	// 	const token = tokenService.getAccessToken();
-	// 	const response = await fetch(`${API_BASE_URL}/v1/cv/upload`, {
-	// 		method: 'POST',
-	// 		headers: {
-	// 			Authorization: `Bearer ${token}`
-	// 		},
-	// 		body: formData
-	// 	});
-
-	// 	if (!response.ok) {
-	// 		if (response.status === 401) {
-	// 			if (browser) {
-	// 				window.location.href = '/auth/login';
-	// 			}
-	// 			throw new Error('Authentication required');
-	// 		}
-	// 		const error = await response.text();
-	// 		throw new Error(`CV Upload Error: ${response.status} - ${error}`);
-	// 	}
-
-	// 	return response.json();
-	// }
-
-	// async deleteCV(cvId: string): Promise<ApiResponse<string>> {
-	// 	return this.makeRequest(`/v1/cv/${cvId}`, {
-	// 		method: 'DELETE'
-	// 	});
-	// }
 
 	async downloadCV(cvId: string): Promise<Blob> {
 		const token = tokenService.getAccessToken();

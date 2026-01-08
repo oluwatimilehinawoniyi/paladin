@@ -25,7 +25,7 @@
 	const colors = colorMap[type as keyof typeof colorMap] ?? colorMap.warning;
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6 p-4">
 	<div class="flex items-start gap-4">
 		<div class="flex h-12 w-12 items-center justify-center rounded-full {colors}">
 			<Icon class="h-6 w-6" />
@@ -36,7 +36,7 @@
 		</div>
 	</div>
 
-	<div class="flex gap-3 pt-4">
+	<div class="flex gap-3">
 		<Button 
 			name="confirm" 
 			icon={Check} 

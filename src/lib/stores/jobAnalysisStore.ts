@@ -39,6 +39,7 @@ function createJobAnalysisStore() {
 					error: error instanceof Error ? error.message : 'Failed to analyze job description',
 					isLoading: false
 				}));
+				throw error;
 			}
 		},
 		reset() {

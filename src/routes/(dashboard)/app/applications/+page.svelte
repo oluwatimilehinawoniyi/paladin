@@ -18,6 +18,7 @@
 	import { apiService, type ProfileResponse } from '$lib/api/apiService';
 	import { jobAnalysisStore } from '$lib/stores/jobAnalysisStore';
 	import { authStore } from '$lib/stores/authStore';
+	import { toastStore } from '$lib/stores/toastStore';
 	import { onMount } from 'svelte';
 	import { formatCoverLetter } from '$lib/utils/textFormatting';
 
@@ -110,11 +111,13 @@
 	async function analyzeJobDescription() {
 		if (!jobDescription.trim()) {
 			error = 'Please provide a job description.';
+			toastStore.add(error, 'error');
 			return;
 		}
 
 		if (!selectedProfileId) {
-			error = 'Please select a profile first to analyze the job description.';
+			error = 'Please select a profile first.';
+			toastStore.add(error, 'error');
 			return;
 		}
 
@@ -137,7 +140,9 @@
 			}
 		} catch (err) {
 			console.error('Failed to analyze job description:', err);
-			error = err instanceof Error ? err.message : 'Failed to analyze job description';
+			const message = err instanceof Error ? err.message : 'Failed to analyze job description';
+			error = message;
+			toastStore.add(message, 'error');
 		} finally {
 			isAnalyzingJD = false;
 		}

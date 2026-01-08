@@ -50,24 +50,30 @@ function createProfilesStore() {
 			update((state) => ({ ...state, isLoading: true, error: null }));
 
 			try {
-				let response;
+				// let response;
 
-				if (profileData.cvFile) {
-					// Create profile with CV
-					response = await apiService.createProfileWithCV(
-						profileData.title,
-						profileData.summary,
-						profileData.skills,
-						profileData.cvFile
-					);
-				} else {
-					// Create profile without CV
-					response = await apiService.createProfile({
-						title: profileData.title,
-						summary: profileData.summary,
-						skills: profileData.skills
-					});
+				// Create profile with CV
+				if (!profileData.cvFile) {
+					throw new Error('CV File is required');
 				}
+
+				const response = await apiService.createProfileWithCV(
+					profileData.title,
+					profileData.summary,
+					profileData.skills,
+					profileData.cvFile
+				);
+				// if (profileData.cvFile) {
+				// } 
+				
+				// else {
+				// 	// Create profile without CV
+				// 	response = await apiService.createProfile({
+				// 		title: profileData.title,
+				// 		summary: profileData.summary,
+				// 		skills: profileData.skills
+				// 	});
+				// }
 
 				// Add new profile to the store
 				update((state) => ({
@@ -200,7 +206,7 @@ function createProfilesStore() {
 		// Replace/Add CV for a profile
 		async replaceCVForProfile(profileId: string, file: File) {
 			try {
-				const response = await apiService.uploadCV(file, profileId);
+				const response = await apiService.uploadCV(profileId, file);
 
 				update((state) => ({
 					...state,

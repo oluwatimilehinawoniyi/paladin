@@ -152,7 +152,7 @@
 					bind:value={title}
 					disabled={isSubmitting}
 					placeholder="e.g., Frontend Developer, Data Scientist"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="w-full rounded-md border placeholder:text-xs border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					required
 				/>
 			</div>
@@ -166,9 +166,9 @@
 					id="summary"
 					bind:value={summary}
 					disabled={isSubmitting}
-					placeholder="Brief description of your experience and expertise..."
+					placeholder="Brief description of your experience and expertise to distinguish this profile"
 					rows="2"
-					class="w-full resize-none rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="w-full resize-none placeholder:text-xs rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					required
 				></textarea>
 			</div>
@@ -183,8 +183,8 @@
 					id="skills"
 					bind:value={skillsInput}
 					disabled={isSubmitting}
-					placeholder="React, TypeScript, Node.js, Python (comma separated)"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					placeholder="TypeScript, Python (comma separated)"
+					class="w-full rounded-md border placeholder:text-xs border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					required
 				/>
 				{#if skills.length > 0}
