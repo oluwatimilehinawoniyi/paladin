@@ -3,6 +3,7 @@
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { modalStore } from '$lib/stores/modalStore';
 	import { profilesStore } from '$lib/stores/profilesStore';
+	import { toastStore } from '$lib/stores/toastStore';
 	import { formatDate } from "$lib/utils/formatDate";
 	import { formatFileSize } from "$lib/utils/formatFileSize";
 	import {
@@ -99,10 +100,12 @@
 			// success - remove from editing state
 			delete editingProfiles[profileId];
 			editingProfiles = { ...editingProfiles };
+			toastStore.add('Profile updated successfully', 'success');
 		} catch (error) {
 			console.error('Failed to update profile:', error);
 			editingProfiles[profileId].error =
 				error instanceof Error ? error.message : 'Failed to update profile';
+			toastStore.add(editingProfiles[profileId].error, 'error');
 			editingProfiles[profileId].isSubmitting = false;
 			editingProfiles = { ...editingProfiles };
 		}
@@ -126,8 +129,10 @@
 							delete editingProfiles[profileId];
 							editingProfiles = { ...editingProfiles };
 						}
+						toastStore.add('Profile deleted', 'success');
 					} catch (error) {
 						console.error('Failed to delete profile:', error);
+						toastStore.add('Failed to delete profile', 'error');
 					}
 				}
 			},
@@ -140,6 +145,7 @@
 			await profilesStore.downloadCV(cvId, fileName);
 		} catch (error) {
 			console.error('Download failed:', error);
+			toastStore.add('Failed to download CV', 'error');
 		}
 	}
 
@@ -154,6 +160,7 @@
 						await profilesStore.deleteCV(cvId, profileId);
 					} catch (error) {
 						console.error('Failed to delete CV:', error);
+						toastStore.add('Failed to delete CV', 'error');
 					}
 				}
 			}
@@ -243,12 +250,14 @@
 		];
 		if (!allowedTypes.includes(file.type)) {
 			editingProfiles[profileId].error = 'Please upload a PDF or Word document';
+			toastStore.add('Please upload a PDF or Word document', 'error');
 			editingProfiles = { ...editingProfiles };
 			return;
 		}
 
 		if (file.size > 5 * 1024 * 1024) {
 			editingProfiles[profileId].error = 'File size must be less than 5MB';
+			toastStore.add('File size must be less than 5MB', 'error');
 			editingProfiles = { ...editingProfiles };
 			return;
 		}
@@ -263,10 +272,12 @@
 
 			// Refresh profiles to get updated CV info
 			await profilesStore.loadProfiles();
+			toastStore.add('CV updated successfully', 'success');
 		} catch (error) {
 			console.error('Failed to replace CV:', error);
 			editingProfiles[profileId].error =
 				error instanceof Error ? error.message : 'Failed to replace CV';
+			toastStore.add(editingProfiles[profileId].error, 'error');
 		} finally {
 			editingProfiles[profileId].replacingCV = false;
 			editingProfiles = { ...editingProfiles };
