@@ -42,6 +42,7 @@
 	let coverLetter = $state<string>('');
 	let companyName = $state('');
 	let jobTitle = $state('');
+	let isEditingDetails = $state(false);
 
 	const coverLetterCategories = {
 		professional: 'Professional/Formal',
@@ -314,6 +315,7 @@
 		companyName = '';
 		jobTitle = '';
 		jdAnalyzed = false;
+		isEditingDetails = false;
 
 		jobAnalysisStore.reset();
 	}
@@ -509,16 +511,32 @@
 						<!-- Application Details -->
 						{#if canProceed}
 							<div class="space-y-4">
-								<div class="flex items-center gap-3">
-									<div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-										<FileText class="h-5 w-5 text-blue-600" />
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-3">
+										<div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+											<FileText class="h-5 w-5 text-blue-600" />
+										</div>
+										<div>
+											<h3 class="text-lg font-semibold">Application Details</h3>
+											<p class="text-sm text-gray-600">Complete your application information</p>
+										</div>
 									</div>
-									<div>
-										<h3 class="text-lg font-semibold">Application Details</h3>
-										<p class="text-sm text-gray-600">Complete your application information</p>
-									</div>
-								</div>
 
+									{#if isSmartMode && jdAnalyzed}
+										<button
+											onclick={() => (isEditingDetails = !isEditingDetails)}
+											class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+										>
+											{#if isEditingDetails}
+												<Check class="h-3.5 w-3.5" />
+												Done
+											{:else}
+												<Edit3 class="h-3.5 w-3.5" />
+												Edit Details
+											{/if}
+										</button>
+									{/if}
+								</div>
 								<!-- Company and Job Details -->
 								<div class="grid gap-4 sm:grid-cols-2">
 									<div>
@@ -529,7 +547,7 @@
 											type="text"
 											id="company"
 											bind:value={companyName}
-											disabled={isSendingApplication || (isSmartMode && jdAnalyzed)}
+											disabled={isSendingApplication || (isSmartMode && jdAnalyzed && !isEditingDetails)}
 											placeholder="Company Name"
 											class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 										/>
@@ -543,7 +561,7 @@
 											type="text"
 											id="job_title"
 											bind:value={jobTitle}
-											disabled={isSendingApplication || (isSmartMode && jdAnalyzed)}
+											disabled={isSendingApplication || (isSmartMode && jdAnalyzed && !isEditingDetails)}
 											placeholder="Software Engineer"
 											class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 										/>
@@ -559,7 +577,7 @@
 										type="email"
 										id="email"
 										bind:value={jobEmail}
-										disabled={isSendingApplication || (isSmartMode && jdAnalyzed)}
+										disabled={isSendingApplication || (isSmartMode && jdAnalyzed && !isEditingDetails)}
 										placeholder="hr@company.com"
 										class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 									/>
